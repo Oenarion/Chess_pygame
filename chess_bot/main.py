@@ -35,70 +35,94 @@ WIN = pygame.display.set_mode(size=(GRID_SIZE,GRID_SIZE))
 
 WHITE=(255,255,255)
 GREEN=(118,150,86)
+RED=(136,8,8)
 FPS=60
 
 #START PIECES IMG CREATION
 #BLACK PIECES
+
+#create a dictionary to store all the possible imgs to be able to use them way more easily
+BLACK_PIECES_IMGS={}
+
 BLACK_KING_IMG = pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','black_king.png'))
 black_king = pygame.transform.scale(
     BLACK_KING_IMG,(CELL_SIZE,CELL_SIZE))
+BLACK_PIECES_IMGS['black_king']=black_king
+
 
 BLACK_QUEEN_IMG=pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','black_queen.png'))
 black_queen=pygame.transform.scale(
     BLACK_QUEEN_IMG,(CELL_SIZE,CELL_SIZE))
+BLACK_PIECES_IMGS['black_queen']=black_queen
 
 BLACK_ROOK_IMG=pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','black_rook.png'))
 black_rook=pygame.transform.scale(
     BLACK_ROOK_IMG,(CELL_SIZE,CELL_SIZE))
+BLACK_PIECES_IMGS['black_rook']=black_rook
 
 BLACK_BISHOP_IMG=pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','black_bishop.png'))
 black_bishop=pygame.transform.scale(
     BLACK_BISHOP_IMG,(CELL_SIZE,CELL_SIZE))
+BLACK_PIECES_IMGS['black_bishop']=black_bishop
 
 BLACK_KNIGHT_IMG=pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','black_knight.png'))
 black_knight=pygame.transform.scale(
     BLACK_KNIGHT_IMG,(CELL_SIZE,CELL_SIZE))
+BLACK_PIECES_IMGS['black_knight']=black_knight
 
 BLACK_PAWN_IMG=pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','black_pawn.png'))
 black_pawn=pygame.transform.scale(
     BLACK_PAWN_IMG,(CELL_SIZE,CELL_SIZE))
+BLACK_PIECES_IMGS['black_pawn']=black_pawn
+
+
+WHITE_PIECES_IMGS={}
 
 #WHITE PIECES
 WHITE_KING_IMG = pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','white_king.png'))
 white_king = pygame.transform.scale(
     WHITE_KING_IMG,(CELL_SIZE,CELL_SIZE))
+WHITE_PIECES_IMGS['white_king']=white_king
 
 WHITE_QUEEN_IMG=pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','white_queen.png'))
 white_queen=pygame.transform.scale(
     WHITE_QUEEN_IMG,(CELL_SIZE,CELL_SIZE))
+WHITE_PIECES_IMGS['white_queen']=white_queen
 
 WHITE_ROOK_IMG=pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','white_rook.png'))
 white_rook=pygame.transform.scale(
     WHITE_ROOK_IMG,(CELL_SIZE,CELL_SIZE))
+WHITE_PIECES_IMGS['white_rook']=white_rook
 
 WHITE_BISHOP_IMG=pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','white_bishop.png'))
 white_bishop=pygame.transform.scale(
     WHITE_BISHOP_IMG,(CELL_SIZE,CELL_SIZE))
+WHITE_PIECES_IMGS['white_bishop']=white_bishop
 
 WHITE_KNIGHT_IMG=pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','white_knight.png'))
 white_knight=pygame.transform.scale(
     WHITE_KNIGHT_IMG,(CELL_SIZE,CELL_SIZE))
+WHITE_PIECES_IMGS['white_knight']=white_knight
 
 WHITE_PAWN_IMG=pygame.image.load(
     os.path.join('chess_bot/piecesPNGs','white_pawn.png'))
 white_pawn=pygame.transform.scale(
     WHITE_PAWN_IMG,(CELL_SIZE,CELL_SIZE))
+WHITE_PIECES_IMGS['white_pawn']=white_pawn
+
+
+board=pygame.Surface((CELL_SIZE*8,CELL_SIZE*8))
 #END
 
 #This section is used to create two chessboards, one will be used to replace spots with no more pieces with the right color
@@ -113,12 +137,10 @@ for i in range(8):
 
 
 
-
 def draw_window_white(starting_position,black_pieces,white_pieces):
     #fill the background with a different color and update it
     #WIN.fill(WHITE)
     if starting_position:
-        board=pygame.Surface((CELL_SIZE*8,CELL_SIZE*8))
         board.fill(WHITE)
         for x in range(0, 8, 2):
             for y in range(1, 8, 2):
@@ -143,15 +165,16 @@ def draw_window_white(starting_position,black_pieces,white_pieces):
             WIN.blit(black_pawn,(black_pieces[f"black_pawn_{i}"].x,black_pieces[f"black_pawn_{i}"].y))
             
         pieces_position[0][0]='black_rook_0'
-        pieces_position[0][1]='black_knight_0'
-        pieces_position[0][2]='black_bishop_0'
-        pieces_position[0][3]='black_queen'
-        pieces_position[0][4]='black_king'
-        pieces_position[0][7]='black_rook_1'
-        pieces_position[0][6]='black_knight_1'
-        pieces_position[0][5]='black_bishop_1'
+        pieces_position[1][0]='black_knight_0'
+        pieces_position[2][0]='black_bishop_0'
+        pieces_position[3][0]='black_queen'
+        pieces_position[4][0]='black_king'
+        pieces_position[5][0]='black_bishop_1'
+        pieces_position[6][0]='black_knight_1'
+        pieces_position[7][0]='black_rook_1'
+
         for i in range(8):
-            pieces_position[1][i]=f'black_pawn_{i}'
+            pieces_position[i][1]=f'black_pawn_{i}'
             
         #white pieces draw
         WIN.blit(white_king,(white_pieces["white_king"].x,white_pieces["white_king"].y))
@@ -165,18 +188,22 @@ def draw_window_white(starting_position,black_pieces,white_pieces):
         for i in range(8):
             WIN.blit(white_pawn,(white_pieces[f"white_pawn_{i}"].x,white_pieces[f"white_pawn_{i}"].y))
             
-        pieces_position[7][0]='white_rook_0'
-        pieces_position[7][1]='white_knight_0'
-        pieces_position[7][2]='white_bishop_0'
-        pieces_position[7][3]='white_queen'
-        pieces_position[7][4]='white_king'
+        pieces_position[0][7]='white_rook_0'
+        pieces_position[1][7]='white_knight_0'
+        pieces_position[2][7]='white_bishop_0'
+        pieces_position[3][7]='white_queen'
+        pieces_position[4][7]='white_king'
+        pieces_position[5][7]='white_bishop_1'
+        pieces_position[6][7]='white_knight_1'
         pieces_position[7][7]='white_rook_1'
-        pieces_position[7][6]='white_knight_1'
-        pieces_position[7][5]='white_bishop_1'
+        
+        
         for i in range(8):
-            pieces_position[6][i]=f'white_pawn_{i}'
+            pieces_position[i][6]=f'white_pawn_{i}'
             
         print(pieces_position)
+        
+
             
 def white_pieces_creation(black_pieces,white_pieces):
     
@@ -228,12 +255,53 @@ def white_pieces_creation(black_pieces,white_pieces):
         white_pawn_pieces.append(pygame.Rect(CELL_SIZE*i,CELL_SIZE*6,CELL_SIZE,CELL_SIZE))
         white_pieces[f"white_pawn_{i}"]=white_pawn_pieces[i]
     
+def draw_updatedPieces(black_pieces,white_pieces):
+    for key in black_pieces:
+        ignoreNums=key.split('_')
+        newKey=ignoreNums[0]+'_'+ignoreNums[1]
+        WIN.blit(BLACK_PIECES_IMGS[newKey],(black_pieces[key].x,black_pieces[key].y))
+
+    for key in white_pieces:
+        ignoreNums=key.split('_')
+        newKey=ignoreNums[0]+'_'+ignoreNums[1]
+        WIN.blit(WHITE_PIECES_IMGS[newKey],(white_pieces[key].x,white_pieces[key].y))
+
+#handles the deletion of multiple red squares, we have at most once 
+def deleteRedSquares(lastRedX,lastRedY):
+    print(lastRedX,lastRedY,isGreen[lastRedX][lastRedY])
+    if isGreen[lastRedX][lastRedY]:
+        pygame.draw.rect(board,GREEN,(lastRedX*CELL_SIZE,lastRedY*CELL_SIZE,CELL_SIZE,CELL_SIZE))
+        WIN.blit(board,board.get_rect())
+    else:
+        pygame.draw.rect(board,WHITE,(lastRedX*CELL_SIZE,lastRedY*CELL_SIZE,CELL_SIZE,CELL_SIZE))
+        WIN.blit(board,board.get_rect())
+
+#TO DO!
+def handle_movement_white(black_pieces,white_pieces,piece,pos):
+    if "black_pawn" in piece:
+       if black_pieces[piece].y==1:
+           pass 
+   
+#Changes the color of the box to red if we want to move a piece
+def changeBoxColor(black_pieces,white_pieces,current_squareX,currentSquareY,lastRedX,lastRedY):
+    #print(current_squareX,currentSquareY)
+    #If we already have a RED square we have to remove it
+    if lastRedX!=-1:
+        deleteRedSquares(lastRedX,lastRedY)
+    #Add the RED square where mouse cursor is
+    pygame.draw.rect(board, RED, (current_squareX*CELL_SIZE, currentSquareY*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+    lastRedX=current_squareX
+    lastRedY=currentSquareY
+    WIN.blit(board,board.get_rect())
+    #Redraw all pieces because they get removed every time we redraw the chessboard
+    draw_updatedPieces(black_pieces,white_pieces)
+    
+    return lastRedX,lastRedY
     
 def draw_window_black(starting_position):
     #fill the background with a different color and update it
     #WIN.fill(WHITE)
     if starting_position:
-        board=pygame.Surface((CELL_SIZE*8,CELL_SIZE*8))
         board.fill(WHITE)
         for x in range(0, 8, 2):
             for y in range(0, 8, 2):
@@ -312,6 +380,8 @@ def main_white():
     running = True
     clock = pygame.time.Clock()
     
+    lastRedX=-1
+    lastRedY=-1
     #pieces creation
     black_pieces={}
     white_pieces={}
@@ -324,7 +394,14 @@ def main_white():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                     running = False
-        
+            #When mouse is pushed
+            if event.type == pygame.MOUSEBUTTONUP:
+                current_x,current_y=pygame.mouse.get_pos()
+                current_squareX=current_x//CELL_SIZE
+                current_squareY=current_y//CELL_SIZE
+                if pieces_position[current_squareX][current_squareY]!='':
+                    lastRedX,lastRedY=changeBoxColor(black_pieces,white_pieces,current_squareX,current_squareY,lastRedX,lastRedY)
+                    print(lastRedX,lastRedY)
             pygame.display.update()
         #draw_window_white(starting_position=False)
         

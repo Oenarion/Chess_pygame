@@ -36,6 +36,7 @@ WIN = pygame.display.set_mode(size=(GRID_SIZE,GRID_SIZE))
 WHITE=(255,255,255)
 GREEN=(118,150,86)
 RED=(136,8,8)
+YELLOW=(236,234,152)
 FPS=60
 
 #START PIECES IMG CREATION
@@ -134,10 +135,14 @@ pieces_position=[]
 for i in range(8):
     isGreen.append(startingGreen*1)
     pieces_position.append(startingPieces*1)
+    
+#dictionary for all pieces
+black_pieces={}
+white_pieces={}
 
 
 
-def draw_window_white(starting_position,black_pieces,white_pieces):
+def draw_window_white(starting_position):
     #fill the background with a different color and update it
     #WIN.fill(WHITE)
     if starting_position:
@@ -196,17 +201,19 @@ def draw_window_white(starting_position,black_pieces,white_pieces):
         pieces_position[5][7]='white_bishop_1'
         pieces_position[6][7]='white_knight_1'
         pieces_position[7][7]='white_rook_1'
-        
-        
         for i in range(8):
             pieces_position[i][6]=f'white_pawn_{i}'
             
         print(pieces_position)
+        print(isGreen)
         
-
-            
-def white_pieces_creation(black_pieces,white_pieces):
+        # TO TEST IF MOVEMENT WORKS
+        # WIN.blit(white_bishop,(0,CELL_SIZE*2))
+        # pieces_position[0][2]='white_bishop'
+                   
+def white_pieces_creation():
     
+    #create a rectangle for every piece and place in a dictionary piece position
     black_king_piece=pygame.Rect(CELL_SIZE*4,0,CELL_SIZE,CELL_SIZE)
     black_pieces["black_king"]=black_king_piece
     black_queen_piece=pygame.Rect(CELL_SIZE*3,0,CELL_SIZE,CELL_SIZE)
@@ -255,7 +262,8 @@ def white_pieces_creation(black_pieces,white_pieces):
         white_pawn_pieces.append(pygame.Rect(CELL_SIZE*i,CELL_SIZE*6,CELL_SIZE,CELL_SIZE))
         white_pieces[f"white_pawn_{i}"]=white_pawn_pieces[i]
     
-def draw_updatedPieces(black_pieces,white_pieces):
+#using the dictionary we redraw each piece in it's current position
+def draw_updatedPieces():
     for key in black_pieces:
         ignoreNums=key.split('_')
         newKey=ignoreNums[0]+'_'+ignoreNums[1]
@@ -267,37 +275,330 @@ def draw_updatedPieces(black_pieces,white_pieces):
         WIN.blit(WHITE_PIECES_IMGS[newKey],(white_pieces[key].x,white_pieces[key].y))
 
 #handles the deletion of multiple red squares, we have at most once 
-def deleteRedSquares(lastRedX,lastRedY):
-    print(lastRedX,lastRedY,isGreen[lastRedX][lastRedY])
-    if isGreen[lastRedX][lastRedY]:
-        pygame.draw.rect(board,GREEN,(lastRedX*CELL_SIZE,lastRedY*CELL_SIZE,CELL_SIZE,CELL_SIZE))
-        WIN.blit(board,board.get_rect())
-    else:
-        pygame.draw.rect(board,WHITE,(lastRedX*CELL_SIZE,lastRedY*CELL_SIZE,CELL_SIZE,CELL_SIZE))
-        WIN.blit(board,board.get_rect())
+def redrawChessboard():
+    board.fill(WHITE)
+    for x in range(0, 8, 2):
+        for y in range(1, 8, 2):
+            pygame.draw.rect(board, GREEN, (x*CELL_SIZE, y*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            isGreen[x][y]=True
+    for x in range(1, 8, 2):
+        for y in range(0, 8, 2):
+            pygame.draw.rect(board, GREEN, (x*CELL_SIZE, y*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            isGreen[x][y]=True        
+    WIN.blit(board,board.get_rect())
 
 #TO DO!
-def handle_movement_white(black_pieces,white_pieces,piece,pos):
+def handle_movement_white(piece,pos):
     if "black_pawn" in piece:
        if black_pieces[piece].y==1:
            pass 
    
 #Changes the color of the box to red if we want to move a piece
-def changeBoxColor(black_pieces,white_pieces,current_squareX,currentSquareY,lastRedX,lastRedY):
-    #print(current_squareX,currentSquareY)
+def changeBoxColor(current_squareX,currentSquareY):
+    print(current_squareX,currentSquareY)
     #If we already have a RED square we have to remove it
-    if lastRedX!=-1:
-        deleteRedSquares(lastRedX,lastRedY)
+    redrawChessboard()
     #Add the RED square where mouse cursor is
     pygame.draw.rect(board, RED, (current_squareX*CELL_SIZE, currentSquareY*CELL_SIZE, CELL_SIZE, CELL_SIZE))
-    lastRedX=current_squareX
-    lastRedY=currentSquareY
-    WIN.blit(board,board.get_rect())
     #Redraw all pieces because they get removed every time we redraw the chessboard
-    draw_updatedPieces(black_pieces,white_pieces)
+    check_possible_moves(current_squareX,currentSquareY)
+    draw_updatedPieces()
+
+def check_possible_moves(current_x,current_y):
+    currentPiece=pieces_position[current_x][current_y]
+    print(currentPiece)
+    if "black_pawn" in currentPiece:
+        if current_y==1:
+            print(current_y+1)
+            pygame.draw.rect(board, YELLOW, (current_x*CELL_SIZE, (current_y+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE*2))
+            if current_x>=1 and "white" in pieces_position[current_x-1][current_y+1]:
+                 pygame.draw.rect(board, YELLOW, ((current_x-1)*CELL_SIZE, (current_y+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            elif current_x<7 and "white" in pieces_position[current_x+1][current_y+1]:
+                pygame.draw.rect(board, YELLOW, ((current_x-1)*CELL_SIZE, (current_y-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE*2))
+        else:
+            pygame.draw.rect(board, YELLOW, (current_x*CELL_SIZE, (current_y+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            if current_x>=1 and "white" in pieces_position[current_x-1][current_y+1]:
+                 pygame.draw.rect(board, YELLOW, ((current_x-1)*CELL_SIZE, (current_y+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            elif current_x<7 and "white" in pieces_position[current_x+1][current_y+1]:
+                pygame.draw.rect(board, YELLOW, ((current_x-1)*CELL_SIZE, (current_y-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+    elif "black_rook" in currentPiece:
+        check_rook('black',current_x,current_y)
+    elif "black_knight" in currentPiece:
+        check_knight('black',current_x,current_y)
+    elif 'black_bishop' in currentPiece:
+        check_bishop('black',current_x,current_y)
+    elif 'black_queen' in currentPiece:
+        check_queen('black',current_x,current_y)
     
-    return lastRedX,lastRedY
+    WIN.blit(board,board.get_rect())
     
+def check_rook(color,current_x,current_y):
+    if color=='black':
+        for i in range(current_x+1,8):
+            if pieces_position[i][current_y]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, current_y*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif 'white' in pieces_position[i][current_y]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, current_y*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a black piece we stop
+            else:
+                break
+        for i in range(0,current_x):
+            if pieces_position[i][current_y]=='':
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, current_y*CELL_SIZE, CELL_SIZE, CELL_SIZE))  
+            elif 'white' in pieces_position[i][current_y]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, current_y*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            else:
+                break
+        for i in range(current_y+1,8):
+            if pieces_position[current_x][i]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (current_x*CELL_SIZE, i*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif 'white' in pieces_position[current_x][i]:
+                pygame.draw.rect(board, YELLOW, (current_x*CELL_SIZE, i*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a black piece we stop
+            else:
+                break
+        for i in range(0,current_y):
+            if pieces_position[current_x][i]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (current_x*CELL_SIZE, i*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif 'white' in pieces_position[current_x][i]:
+                pygame.draw.rect(board, YELLOW, (current_x*CELL_SIZE, i*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a black piece we stop
+            else:
+                break
+    else:
+        for i in range(current_x+1,8):
+            if pieces_position[i][current_y]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, current_y*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif 'black' in pieces_position[i][current_y]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, current_y*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a black piece we stop
+            else:
+                break
+        for i in range(0,current_x):
+            if pieces_position[i][current_y]=='':
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, current_y*CELL_SIZE, CELL_SIZE, CELL_SIZE))  
+            elif 'black' in pieces_position[i][current_y]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, current_y*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            else:
+                break
+        for i in range(current_y+1,8):
+            if pieces_position[current_x][i]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (current_x*CELL_SIZE, i*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif 'black' in pieces_position[current_x][i]:
+                pygame.draw.rect(board, YELLOW, (current_x*CELL_SIZE, i*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a black piece we stop
+            else:
+                break
+        for i in range(0,current_y):
+            if pieces_position[current_x][i]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (current_x*CELL_SIZE, i*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif 'black' in pieces_position[current_x][i]:
+                pygame.draw.rect(board, YELLOW, (current_x*CELL_SIZE, i*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a black piece we stop
+            else:
+                break   
+
+def check_knight(color,current_x,current_y):
+    #x+2, y+1/y-1
+    #x-2, y+1/y-1
+    #y+2 x+1/x-1
+    #y-2 x+1/x-1
+    
+    #BLACK KNIGHT MANAGEMENT
+    if color=='black':
+        if current_x+2<=7:
+            if current_y+1<=7 and 'black' not in pieces_position[current_x+2][current_y+1]:
+                pygame.draw.rect(board, YELLOW, ((current_x+2)*CELL_SIZE, (current_y+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            if current_y-1>=0 and 'black' not in pieces_position[current_x+2][current_y-1]:
+                pygame.draw.rect(board, YELLOW, ((current_x+2)*CELL_SIZE, (current_y-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        if current_x-2>=0:
+            if current_y+1<=7 and 'black' not in pieces_position[current_x-2][current_y+1]:
+               pygame.draw.rect(board, YELLOW, ((current_x-2)*CELL_SIZE, (current_y+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            if current_y-1>=0 and 'black' not in pieces_position[current_x-2][current_y-1]:
+                pygame.draw.rect(board, YELLOW, ((current_x-2)*CELL_SIZE, (current_y-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        if current_y-2>=0:
+            if current_x+1<=7 and 'black' not in pieces_position[current_x+1][current_y-2]:
+                pygame.draw.rect(board, YELLOW, ((current_x+1)*CELL_SIZE, (current_y-2)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            if current_x-1>=0 and 'black' not in pieces_position[current_x-1][current_y-2]:
+                pygame.draw.rect(board, YELLOW, ((current_x-1)*CELL_SIZE, (current_y-2)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        if current_y+2<=7:
+            if current_x+1<=7 and 'black' not in pieces_position[current_x+1][current_y+2]:
+                pygame.draw.rect(board, YELLOW, ((current_x+1)*CELL_SIZE, (current_y+2)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            if current_x-1>=0 and 'black' not in pieces_position[current_x-1][current_y+2]:
+                pygame.draw.rect(board, YELLOW, ((current_x-1)*CELL_SIZE, (current_y+2)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+    
+    #WHITE KNIGHT MANAGEMENT
+    else:
+        if current_x+3<=7:
+            if current_y+1<=7 and 'white' not in pieces_position[current_x+3][current_y+1]:
+                pygame.draw.rect(board, YELLOW, ((current_x+3)*CELL_SIZE, (current_y+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            if current_y-1>=0 and 'white' not in pieces_position[current_x+3][current_y-1]:
+                pygame.draw.rect(board, YELLOW, ((current_x+3)*CELL_SIZE, (current_y-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        if current_x-3>=0:
+            if current_y+1<=7 and 'white' not in pieces_position[current_x-3][current_y+1]:
+               pygame.draw.rect(board, YELLOW, ((current_x-3)*CELL_SIZE, (current_y+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            if current_y-1>=0 and 'white' not in pieces_position[current_x-3][current_y-1]:
+                pygame.draw.rect(board, YELLOW, ((current_x-3)*CELL_SIZE, (current_y-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        if current_y-3>=0:
+            if current_x+1<=7 and 'white' not in pieces_position[current_x+1][current_y-3]:
+                pygame.draw.rect(board, YELLOW, ((current_x+1)*CELL_SIZE, (current_y-3)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            if current_x-1>=0 and 'white' not in pieces_position[current_x-1][current_y-3]:
+                pygame.draw.rect(board, YELLOW, ((current_x-1)*CELL_SIZE, (current_y-3)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        if current_y+3<=7:
+            if current_x+1<=7 and 'white' not in pieces_position[current_x+1][current_y+3]:
+                pygame.draw.rect(board, YELLOW, ((current_x+1)*CELL_SIZE, (current_y+3)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            if current_x-1>=0 and 'white' not in pieces_position[current_x-1][current_y+3]:
+                pygame.draw.rect(board, YELLOW, ((current_x-1)*CELL_SIZE, (current_y+3)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+    
+def check_bishop(color,current_x,current_y):
+    counter=1
+    if color=='black':
+        for i in range(current_x+1,8):
+            if current_y+counter<=7 and pieces_position[i][current_y+counter]=='':
+                #until we find a piece we can proceed to move in that square
+                #print("I'M HERE!!",counter,i,current_y+counter)
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y+counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif current_y+counter<=7 and 'white' in pieces_position[i][current_y+counter]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y+counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a white piece we stop
+            else:
+                break
+            counter+=1      
+        counter=1
+        for i in range(current_x-1,-1,-1):
+            if current_y-counter>=0 and pieces_position[i][current_y-counter]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y-counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif current_y-counter>=0 and 'white' in pieces_position[i][current_y]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y-counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a white piece we stop
+            else:
+                break
+            counter+=1 
+        counter=1
+        for i in range(current_x+1,8):    
+            if current_y-counter>=0 and pieces_position[i][current_y-counter]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y-counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif current_y+counter>=0 and 'white' in pieces_position[i][current_y-counter]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y-counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a white piece we stop
+            else:
+                break
+            counter+=1     
+        counter=1 
+        for i in range(current_x-1,-1,-1):
+            if current_y+counter<=7 and pieces_position[i][current_y+counter]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y+counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif current_y+counter<=7 and 'white' in pieces_position[i][current_y+counter]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y+counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a white piece we stop
+            else:
+                break
+            counter+=1      
+    else:
+        for i in range(current_x+1,8):
+            if current_y+counter<=7 and pieces_position[i][current_y+counter]=='':
+                #until we find a piece we can proceed to move in that square
+                #print("I'M HERE!!",counter,i,current_y+counter)
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y+counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif current_y+counter<=7 and 'black' in pieces_position[i][current_y+counter]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y+counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a white piece we stop
+            else:
+                break
+            counter+=1      
+        counter=1
+        for i in range(current_x-1,-1,-1):
+            if current_y-counter>=0 and pieces_position[i][current_y-counter]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y-counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif current_y-counter>=0 and 'black' in pieces_position[i][current_y]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y-counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a white piece we stop
+            else:
+                break
+            counter+=1 
+        counter=1
+        for i in range(current_x+1,8):    
+            if current_y-counter>=0 and pieces_position[i][current_y-counter]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y-counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif current_y+counter>=0 and 'black' in pieces_position[i][current_y-counter]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y-counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a white piece we stop
+            else:
+                break
+            counter+=1     
+        counter=1 
+        for i in range(current_x-1,-1,-1):
+            if current_y+counter<=7 and pieces_position[i][current_y+counter]=='':
+                #until we find a piece we can proceed to move in that square
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y+counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            #if we find a white piece we have to stop there as possible moves    
+            elif current_y+counter<=7 and 'black' in pieces_position[i][current_y+counter]:
+                pygame.draw.rect(board, YELLOW, (i*CELL_SIZE, (current_y+counter)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                break
+            #if we find a white piece we stop
+            else:
+                break
+            counter+=1  
+            
+def check_queen(color,current_x,current_y):
+    check_rook(color,current_x,current_y)
+    check_bishop(color,current_x,current_y)
+    
+#TO END
+def check_king(color,current_x,current_y):
+    if color=='black':
+        if current_x+1<=7 and 'black' not in pieces_position[current_x+1][current_y]:
+            pygame.draw.rect(board, YELLOW, ((current_x+1)*CELL_SIZE, (current_y)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            if current_y+1<=7 and 'black' not in pieces_position[current_x+1][current_y+1]:
+                pygame.draw.rect(board, YELLOW, ((current_x+1)*CELL_SIZE, (current_y+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                if 'black' not in pieces_position[current_x][current_y+1]:
+                    pygame.draw.rect(board, YELLOW, ((current_x)*CELL_SIZE, (current_y+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            if current_y-1>=0 and 'black' not in pieces_position[current_x+1][current_y+1]:
+                pygame.draw.rect(board, YELLOW, ((current_x+1)*CELL_SIZE, (current_y-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+                if 'black' not in pieces_position[current_x][current_y-1]:
+                    pygame.draw.rect(board, YELLOW, ((current_x)*CELL_SIZE, (current_y-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        if current_x-1>=0 and 'black' not in pieces_position[current_x-1][current_y]:
+            pygame.draw.rect(board, YELLOW, ((current_x+1)*CELL_SIZE, (current_y)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
 def draw_window_black(starting_position):
     #fill the background with a different color and update it
     #WIN.fill(WHITE)
@@ -375,19 +676,16 @@ def draw_window_black(starting_position):
             WIN.blit(white_pawn,(CELL_SIZE*i,CELL_SIZE))
             white_pawn_pieces.append(pygame.Rect(CELL_SIZE*i,CELL_SIZE,CELL_SIZE,CELL_SIZE))
 
+
 #variables
 def main_white():
     running = True
     clock = pygame.time.Clock()
-    
-    lastRedX=-1
-    lastRedY=-1
+
     #pieces creation
-    black_pieces={}
-    white_pieces={}
-    white_pieces_creation(black_pieces,white_pieces)
+    white_pieces_creation()
     #drawing chessboard first time
-    draw_window_white(True,black_pieces,white_pieces)
+    draw_window_white(True)
     
     while running:
         clock.tick(FPS)
@@ -400,8 +698,7 @@ def main_white():
                 current_squareX=current_x//CELL_SIZE
                 current_squareY=current_y//CELL_SIZE
                 if pieces_position[current_squareX][current_squareY]!='':
-                    lastRedX,lastRedY=changeBoxColor(black_pieces,white_pieces,current_squareX,current_squareY,lastRedX,lastRedY)
-                    print(lastRedX,lastRedY)
+                    changeBoxColor(current_squareX,current_squareY)
             pygame.display.update()
         #draw_window_white(starting_position=False)
         

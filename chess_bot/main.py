@@ -304,7 +304,11 @@ def deleteLastPossibleMoves():
 #TO DO!
 #once a yellow square is touched, we need to move the pieces
 #update positions and remove eaten ones
-def movePieces(piece,pos):
+def movePieces(piece,pos,currentTurn):
+    if currentTurn=='white':
+        currentTurn='black'
+    else:
+        currentTurn='white'
     current_piece=pieces_position[pos[0]][pos[1]]
     print(piece,current_piece)
     if 'black' in piece:
@@ -353,7 +357,7 @@ def movePieces(piece,pos):
             black_pieces[piece].y=pos[1]*CELL_SIZE
             pieces_position[pos[0]][pos[1]]=piece
         
-        draw_updatedPieces()
+        #draw_updatedPieces()
         #WIN.blit(BLACK_PIECES_IMGS[newKey],(black_pieces[piece].x,black_pieces[piece].y))
         
     else:
@@ -398,10 +402,10 @@ def movePieces(piece,pos):
             white_pieces[piece].x=pos[0]*CELL_SIZE
             white_pieces[piece].y=pos[1]*CELL_SIZE
             pieces_position[pos[0]][pos[1]]=piece
-        draw_updatedPieces()
+    redrawChessboard()
+    draw_updatedPieces()
+    return currentTurn
     
-    
-   
 #Changes the color of the box to red if we want to move a piece
 def changeBoxColor(current_squareX,current_squareY):
     print(current_squareX,current_squareY)
@@ -972,6 +976,8 @@ def main_white():
     running = True
     clock = pygame.time.Clock()
 
+    #TURNS! white starts ofc
+    currentTurn='white'
     #pieces creation
     white_pieces_creation()
     #drawing chessboard first time
@@ -988,8 +994,9 @@ def main_white():
                 current_squareX=current_x//CELL_SIZE
                 current_squareY=current_y//CELL_SIZE
                 if isYellow[current_squareX][current_squareY]==True:
-                    movePieces(current_piece,(current_squareX,current_squareY))
-                if pieces_position[current_squareX][current_squareY]!='':
+                    currentTurn=movePieces(current_piece,(current_squareX,current_squareY),currentTurn)
+                    deleteLastPossibleMoves()
+                if pieces_position[current_squareX][current_squareY]!='' and currentTurn in pieces_position[current_squareX][current_squareY]: 
                     deleteLastPossibleMoves()
                     current_piece=changeBoxColor(current_squareX,current_squareY)
                     #print(current_piece)

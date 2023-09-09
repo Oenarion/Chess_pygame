@@ -142,6 +142,16 @@ for i in range(8):
 black_pieces={}
 white_pieces={}
 
+#variables for castle
+blackKingMoved=False
+blackRookMoved0=False
+blackRookMoved1=False
+
+whiteKingMoved=False
+whiteRookMoved0=False
+whiteRookMoved1=False
+
+#variables for en-passant
 
 
 def draw_window_white(starting_position):
@@ -296,28 +306,98 @@ def deleteLastPossibleMoves():
 #update positions and remove eaten ones
 def movePieces(piece,pos):
     current_piece=pieces_position[pos[0]][pos[1]]
+    print(piece,current_piece)
     if 'black' in piece:
+        if 'king' in piece:
+            #long castle
+            if 'black_rook_0' in current_piece:
+                pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
+                #updating black pieces to draw figures
+                black_pieces['black_rook_0'].x=3*CELL_SIZE
+                black_pieces[piece].x=2*CELL_SIZE
+                #updating grid to check for future movements
+                pieces_position[2][0]=piece
+                pieces_position[3][0]='black_rook_0'
+                
+                #To ensure castle can't be used again
+                blackRookMoved0=True
+                blackRookMoved1=True
+                blackKingMoved=True
+            #short castle
+            if 'black_rook_1' in current_piece:
+                pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
+                #updating black pieces to draw figures
+                black_pieces['black_rook_1'].x=5*CELL_SIZE
+                black_pieces[piece].x=6*CELL_SIZE
+                #updating grid to check for future movements
+                pieces_position[6][0]=piece
+                pieces_position[5][0]='black_rook_1'
+                
+                #To ensure castle can't be used again
+                blackRookMoved0=True
+                blackRookMoved1=True
+                blackKingMoved=True
         #normalize new position as the starting of the square
         # print(pos[0],pos[1])
         # print((pos[0]//8*8),(pos[1]//8)*8)
-        #NEED TO REDRAW EACH PIECE IN NEW POSITION!!
-        if 'white' in current_piece:
-            white_pieces.pop(current_piece)
-        pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
-        black_pieces[piece].x=pos[0]*CELL_SIZE
-        black_pieces[piece].y=pos[1]*CELL_SIZE
-        pieces_position[pos[0]][pos[1]]=piece
+        else:
+            if current_piece=='black_rook_0':
+                blackRookMoved0=True
+            elif current_piece=='black_rook_1':
+                blackRookMoved1=True
+            #NEED TO REDRAW EACH PIECE IN NEW POSITION!!
+            if 'white' in current_piece:
+                white_pieces.pop(current_piece)
+            pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
+            black_pieces[piece].x=pos[0]*CELL_SIZE
+            black_pieces[piece].y=pos[1]*CELL_SIZE
+            pieces_position[pos[0]][pos[1]]=piece
         
         draw_updatedPieces()
         #WIN.blit(BLACK_PIECES_IMGS[newKey],(black_pieces[piece].x,black_pieces[piece].y))
         
     else:
-        if 'black' in current_piece:
-            black_pieces.pop(current_piece)
-        pieces_position[white_pieces[piece].x//CELL_SIZE][white_pieces[piece].y//CELL_SIZE]=''
-        white_pieces[piece].x=pos[0]*CELL_SIZE
-        white_pieces[piece].y=pos[1]*CELL_SIZE
-        pieces_position[pos[0]][pos[1]]=piece
+        if 'king' in piece:
+            #long castle
+            if 'white_rook_0' in current_piece:
+                pieces_position[white_pieces[piece].x//CELL_SIZE][white_pieces[piece].y//CELL_SIZE]=''
+                #updating black pieces to draw figures
+                white_pieces['white_rook_0'].x=3*CELL_SIZE
+                white_pieces[piece].x=2*CELL_SIZE
+                #updating grid to check for future movements
+                pieces_position[2][7]=piece
+                pieces_position[3][7]='white_rook_0'
+                
+                #To ensure castle can't be used again
+                whiteRookMoved0=True
+                whiteRookMoved1=True
+                whiteKingMoved=True
+            #short castle
+            if 'white_rook_1' in current_piece:
+                pieces_position[white_pieces[piece].x//CELL_SIZE][white_pieces[piece].y//CELL_SIZE]=''
+                #updating black pieces to draw figures
+                white_pieces['white_rook_1'].x=5*CELL_SIZE
+                white_pieces[piece].x=6*CELL_SIZE
+                #updating grid to check for future movements
+                pieces_position[6][7]=piece
+                pieces_position[5][7]='white_rook_1'
+                
+                #To ensure castle can't be used again
+                whiteRookMoved0=True
+                whiteRookMoved1=True
+                whiteKingMoved=True
+                
+        else:
+            if current_piece=='white_rook_0':
+                whiteRookMoved0=True
+            elif current_piece=='white_rook_1':
+                whiteRookMoved1=True
+            if 'black' in current_piece:
+                black_pieces.pop(current_piece)
+            pieces_position[white_pieces[piece].x//CELL_SIZE][white_pieces[piece].y//CELL_SIZE]=''
+            white_pieces[piece].x=pos[0]*CELL_SIZE
+            white_pieces[piece].y=pos[1]*CELL_SIZE
+            pieces_position[pos[0]][pos[1]]=piece
         draw_updatedPieces()
     
     
@@ -415,9 +495,7 @@ def check_pawn(color,current_x,current_y):
             if current_x<7 and "black" in pieces_position[current_x+1][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
                 isYellow[current_x+1][current_y-1]=True
-   
-   
-#ISSUES TO SOLVE             
+               
 def check_rook(color,current_x,current_y):
     if color=='black':
         for i in range(current_x+1,8):
@@ -433,7 +511,7 @@ def check_rook(color,current_x,current_y):
             #if we find a black piece we stop
             else:
                 break
-        for i in range(current_x,-1,-1):
+        for i in range(current_x-1,-1,-1):
             if pieces_position[i][current_y]=='':
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2) 
                 isYellow[i][current_y]=True
@@ -456,7 +534,7 @@ def check_rook(color,current_x,current_y):
             #if we find a black piece we stop
             else:
                 break
-        for i in range(current_y,-1,-1):
+        for i in range(current_y-1,-1,-1):
             if pieces_position[current_x][i]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
@@ -483,7 +561,7 @@ def check_rook(color,current_x,current_y):
             #if we find a black piece we stop
             else:
                 break
-        for i in range(current_x,-1,-1):
+        for i in range(current_x-1,-1,-1):
             if pieces_position[i][current_y]=='':
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
                 isYellow[i][current_y]=True
@@ -506,7 +584,7 @@ def check_rook(color,current_x,current_y):
             #if we find a black piece we stop
             else:
                 break
-        for i in range(current_y,-1,-1):
+        for i in range(current_y-1,-1,-1):
             if pieces_position[current_x][i]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
@@ -718,7 +796,10 @@ def check_queen(color,current_x,current_y):
 def check_king(color,current_x,current_y):
     #BLACK KING
     if color=='black':
-        
+        if short_castle('black'):
+            pygame.draw.circle(board, YELLOW, (7*CELL_SIZE+CELL_SIZE//2, CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+        if long_castle('black'):
+            pygame.draw.circle(board, YELLOW, (CELL_SIZE//2, CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
         if current_x+1<=7:
             if 'black' not in pieces_position[current_x+1][current_y]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
@@ -751,6 +832,10 @@ def check_king(color,current_x,current_y):
     
     #WHITE KING
     else:
+        if short_castle('white'):
+            pygame.draw.circle(board, YELLOW, (7*CELL_SIZE+CELL_SIZE//2, 7*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+        if long_castle('white'):
+            pygame.draw.circle(board, YELLOW, (CELL_SIZE//2, 7*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
         if current_x+1<=7:
             if 'white' not in pieces_position[current_x+1][current_y]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
@@ -780,7 +865,30 @@ def check_king(color,current_x,current_y):
             if current_y-1>=0 and 'white' not in pieces_position[current_x-1][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
                 isYellow[current_x-1][current_y-1]=True
-                        
+   
+   
+#ADD CONSTRAINT THAT WE CAN'T CASTLE IF UNDER ATTACK ON THAT CELL
+def short_castle(color):
+    if color=='black':
+        if blackKingMoved==False and blackRookMoved1==False and pieces_position[5][0]=='' and pieces_position[6][0]=='':
+            isYellow[7][0]=True
+            return True   
+    else:
+        if whiteKingMoved==False and whiteRookMoved1==False and pieces_position[5][7]=='' and pieces_position[6][7]=='':
+            isYellow[7][7]=True
+            return True
+
+def long_castle(color):
+    if color=='black':
+        if blackKingMoved==False and blackRookMoved0==False and pieces_position[1][0]=='' and pieces_position[2][0]=='' and pieces_position[3][0]=='':
+            isYellow[0][0]=True
+            return True
+    else:
+        if whiteKingMoved==False and whiteRookMoved0==False and pieces_position[1][7]=='' and pieces_position[2][7]=='' and pieces_position[3][7]=='':
+            isYellow[0][7]=True
+            return True
+    
+    
 def draw_window_black(starting_position):
     #fill the background with a different color and update it
     #WIN.fill(WHITE)
@@ -884,7 +992,7 @@ def main_white():
                 if pieces_position[current_squareX][current_squareY]!='':
                     deleteLastPossibleMoves()
                     current_piece=changeBoxColor(current_squareX,current_squareY)
-                    print(current_piece)
+                    #print(current_piece)
                 
                 
             pygame.display.update()

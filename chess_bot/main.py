@@ -132,8 +132,10 @@ startingGreen=[False,False,False,False,False,False,False,False]
 startingPieces=['','','','','','','','']
 isGreen=[]
 pieces_position=[]
+isYellow=[]
 for i in range(8):
     isGreen.append(startingGreen*1)
+    isYellow.append(startingGreen*1)
     pieces_position.append(startingPieces*1)
     
 #dictionary for all pieces
@@ -206,11 +208,8 @@ def draw_window_white(starting_position):
             
         print(pieces_position)
         print(isGreen)
-        
-        # TO TEST IF MOVEMENT WORKS
-        # WIN.blit(white_bishop,(0,CELL_SIZE*2))
-        # pieces_position[0][2]='white_bishop'
-                   
+
+#player is playing WHITE                   
 def white_pieces_creation():
     
     #create a rectangle for every piece and place in a dictionary piece position
@@ -287,22 +286,53 @@ def redrawChessboard():
             isGreen[x][y]=True        
     WIN.blit(board,board.get_rect())
 
+def deleteLastPossibleMoves():
+    for i in range(8):
+        for j in range(8):
+            isYellow[i][j]=False
+
 #TO DO!
-def handle_movement_white(piece,pos):
-    if "black_pawn" in piece:
-       if black_pieces[piece].y==1:
-           pass 
+#once a yellow square is touched, we need to move the pieces
+#update positions and remove eaten ones
+def movePieces(piece,pos):
+    current_piece=pieces_position[pos[0]][pos[1]]
+    if 'black' in piece:
+        #normalize new position as the starting of the square
+        # print(pos[0],pos[1])
+        # print((pos[0]//8*8),(pos[1]//8)*8)
+        #NEED TO REDRAW EACH PIECE IN NEW POSITION!!
+        if 'white' in current_piece:
+            white_pieces.pop(current_piece)
+        pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
+        black_pieces[piece].x=pos[0]*CELL_SIZE
+        black_pieces[piece].y=pos[1]*CELL_SIZE
+        pieces_position[pos[0]][pos[1]]=piece
+        
+        draw_updatedPieces()
+        #WIN.blit(BLACK_PIECES_IMGS[newKey],(black_pieces[piece].x,black_pieces[piece].y))
+        
+    else:
+        if 'black' in current_piece:
+            black_pieces.pop(current_piece)
+        pieces_position[white_pieces[piece].x//CELL_SIZE][white_pieces[piece].y//CELL_SIZE]=''
+        white_pieces[piece].x=pos[0]*CELL_SIZE
+        white_pieces[piece].y=pos[1]*CELL_SIZE
+        pieces_position[pos[0]][pos[1]]=piece
+        draw_updatedPieces()
+    
+    
    
 #Changes the color of the box to red if we want to move a piece
-def changeBoxColor(current_squareX,currentSquareY):
-    print(current_squareX,currentSquareY)
+def changeBoxColor(current_squareX,current_squareY):
+    print(current_squareX,current_squareY)
     #If we already have a RED square we have to remove it
     redrawChessboard()
     #Add the RED square where mouse cursor is
-    pygame.draw.rect(board, RED, (current_squareX*CELL_SIZE, currentSquareY*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+    pygame.draw.rect(board, RED, (current_squareX*CELL_SIZE, current_squareY*CELL_SIZE, CELL_SIZE, CELL_SIZE))
     #Redraw all pieces because they get removed every time we redraw the chessboard
-    check_possible_moves(current_squareX,currentSquareY)
+    check_possible_moves(current_squareX,current_squareY)
     draw_updatedPieces()
+    return pieces_position[current_squareX][current_squareY]
 
 def check_possible_moves(current_x,current_y):
     currentPiece=pieces_position[current_x][current_y]
@@ -340,47 +370,65 @@ def check_pawn(color,current_x,current_y):
             #TO DRAW CIRCLES I NEED TO SET THE CENTER IN HALF OF THE SQUARE, I.E. CELL_SIZE+CELL_SIZE//2
             if pieces_position[current_x][current_y+1]=='':
                 pygame.draw.circle(board, YELLOW, (current_x*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x][current_y+1]=True
                 if pieces_position[current_x][current_y+2]=='':
                     pygame.draw.circle(board, YELLOW, (current_x*CELL_SIZE+CELL_SIZE//2, (current_y+2)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                    isYellow[current_x][current_y+2]=True
             if current_x>=1 and "white" in pieces_position[current_x-1][current_y+1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y+1]=True
             if current_x<7 and "white" in pieces_position[current_x+1][current_y+1]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+1][current_y+1]=True
         else:
-            if pieces_position[current_x][current_y+1]=='':
+            if current_y+1<=7 and pieces_position[current_x][current_y+1]=='':
                 pygame.draw.circle(board, YELLOW, (current_x*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
-            if current_x>=1 and "white" in pieces_position[current_x-1][current_y+1]:
+                isYellow[current_x][current_y+1]=True
+            if current_y+1<=7 and current_x-1>=0 and "white" in pieces_position[current_x-1][current_y+1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
-            if current_x<7 and "white" in pieces_position[current_x+1][current_y+1]:
+                isYellow[current_x-1][current_y+1]=True
+            if current_x+1<=7 and current_y+1<=7 and "white" in pieces_position[current_x+1][current_y+1]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+1][current_y+1]=True
     else:
         if current_y==6:
             #TO DRAW CIRCLES I NEED TO SET THE CENTER IN HALF OF THE SQUARE, I.E. CELL_SIZE+CELL_SIZE//2
             if pieces_position[current_x][current_y-1]=='':
                 pygame.draw.circle(board, YELLOW, (current_x*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x][current_y-1]=True
                 if pieces_position[current_x][current_y-2]=='':
                     pygame.draw.circle(board, YELLOW, (current_x*CELL_SIZE+CELL_SIZE//2, (current_y-2)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                    isYellow[current_x][current_y-2]=True
             if current_x>=1 and "black" in pieces_position[current_x-1][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y-1]=True
             if current_x<7 and "black" in pieces_position[current_x+1][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y-1]=True
         else:
-            if pieces_position[current_x][current_y-1]=='':
+            if current_y-1>=0 and pieces_position[current_x][current_y-1]=='':
                 pygame.draw.circle(board, YELLOW, (current_x*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x][current_y-1]=True
             if current_x>=1 and "black" in pieces_position[current_x-1][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y-1]=True
             if current_x<7 and "black" in pieces_position[current_x+1][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
-    
+                isYellow[current_x+1][current_y-1]=True
+   
+   
+#ISSUES TO SOLVE             
 def check_rook(color,current_x,current_y):
     if color=='black':
         for i in range(current_x+1,8):
             if pieces_position[i][current_y]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y]=True
             #if we find a white piece we have to stop there as possible moves    
             elif 'white' in pieces_position[i][current_y]:
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y]=True
                 break
             #if we find a black piece we stop
             else:
@@ -388,8 +436,10 @@ def check_rook(color,current_x,current_y):
         for i in range(current_x,-1,-1):
             if pieces_position[i][current_y]=='':
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2) 
+                isYellow[i][current_y]=True
             elif 'white' in pieces_position[i][current_y]:
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y]=True
                 break
             else:
                 break
@@ -397,9 +447,11 @@ def check_rook(color,current_x,current_y):
             if pieces_position[current_x][i]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x][i]=True
             #if we find a white piece we have to stop there as possible moves    
             elif 'white' in pieces_position[current_x][i]:
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x][i]=True
                 break
             #if we find a black piece we stop
             else:
@@ -408,9 +460,11 @@ def check_rook(color,current_x,current_y):
             if pieces_position[current_x][i]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x][i]=True
             #if we find a white piece we have to stop there as possible moves    
             elif 'white' in pieces_position[current_x][i]:
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x][i]=True
                 break
             #if we find a black piece we stop
             else:
@@ -420,9 +474,11 @@ def check_rook(color,current_x,current_y):
             if pieces_position[i][current_y]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y]=True
             #if we find a white piece we have to stop there as possible moves    
             elif 'black' in pieces_position[i][current_y]:
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y]=True
                 break
             #if we find a black piece we stop
             else:
@@ -430,8 +486,10 @@ def check_rook(color,current_x,current_y):
         for i in range(current_x,-1,-1):
             if pieces_position[i][current_y]=='':
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y]=True
             elif 'black' in pieces_position[i][current_y]:
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y]=True
                 break
             else:
                 break
@@ -439,9 +497,11 @@ def check_rook(color,current_x,current_y):
             if pieces_position[current_x][i]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x][i]=True
             #if we find a white piece we have to stop there as possible moves    
             elif 'black' in pieces_position[current_x][i]:
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x][i]=True
                 break
             #if we find a black piece we stop
             else:
@@ -450,9 +510,11 @@ def check_rook(color,current_x,current_y):
             if pieces_position[current_x][i]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x][i]=True
             #if we find a white piece we have to stop there as possible moves    
             elif 'black' in pieces_position[current_x][i]:
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x][i]=True
                 break
             #if we find a black piece we stop
             else:
@@ -469,46 +531,62 @@ def check_knight(color,current_x,current_y):
         if current_x+2<=7:
             if current_y+1<=7 and 'black' not in pieces_position[current_x+2][current_y+1]:
                 pygame.draw.circle(board, YELLOW, ((current_x+2)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+2][current_y+1]=True
             if current_y-1>=0 and 'black' not in pieces_position[current_x+2][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x+2)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+2][current_y-1]=True
         if current_x-2>=0:
             if current_y+1<=7 and 'black' not in pieces_position[current_x-2][current_y+1]:
-               pygame.draw.circle(board, YELLOW, ((current_x-2)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                pygame.draw.circle(board, YELLOW, ((current_x-2)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-2][current_y+1]=True
             if current_y-1>=0 and 'black' not in pieces_position[current_x-2][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-2)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-2][current_y-1]=True
         if current_y-2>=0:
             if current_x+1<=7 and 'black' not in pieces_position[current_x+1][current_y-2]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y-2)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+1][current_y-2]=True
             if current_x-1>=0 and 'black' not in pieces_position[current_x-1][current_y-2]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y-2)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y-2]=True
         if current_y+2<=7:
             if current_x+1<=7 and 'black' not in pieces_position[current_x+1][current_y+2]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y+2)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+1][current_y+2]=True
             if current_x-1>=0 and 'black' not in pieces_position[current_x-1][current_y+2]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y+2)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
-    
+                isYellow[current_x-1][current_y+2]=True
+                
     #WHITE KNIGHT MANAGEMENT
     else:
         if current_x+2<=7:
             if current_y+1<=7 and 'white' not in pieces_position[current_x+2][current_y+1]:
                 pygame.draw.circle(board, YELLOW, ((current_x+2)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+2][current_y+1]=True
             if current_y-1>=0 and 'white' not in pieces_position[current_x+2][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x+2)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+2][current_y-1]=True
         if current_x-2>=0:
             if current_y+1<=7 and 'white' not in pieces_position[current_x-2][current_y+1]:
-               pygame.draw.circle(board, YELLOW, ((current_x-2)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                pygame.draw.circle(board, YELLOW, ((current_x-2)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-2][current_y+1]=True
             if current_y-1>=0 and 'white' not in pieces_position[current_x-2][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-2)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-2][current_y-1]=True
         if current_y-2>=0:
             if current_x+1<=7 and 'white' not in pieces_position[current_x+1][current_y-2]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y-2)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+1][current_y-2]=True
             if current_x-1>=0 and 'white' not in pieces_position[current_x-1][current_y-2]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y-2)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y-2]=True
         if current_y+2<=7:
             if current_x+1<=7 and 'white' not in pieces_position[current_x+1][current_y+2]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y+2)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+1][current_y+2]=True
             if current_x-1>=0 and 'white' not in pieces_position[current_x-1][current_y+2]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y+2)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y+2]=True
     
 def check_bishop(color,current_x,current_y):
     counter=1
@@ -517,9 +595,11 @@ def check_bishop(color,current_x,current_y):
             if current_y+counter<=7 and pieces_position[i][current_y+counter]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y+counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y+counter]=True
             #if we find a white piece we have to stop there as possible moves    
             elif current_y+counter<=7 and 'white' in pieces_position[i][current_y+counter]:
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y+counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y+counter]=True
                 break
             #if we find a white piece we stop
             else:
@@ -530,9 +610,11 @@ def check_bishop(color,current_x,current_y):
             if current_y-counter>=0 and pieces_position[i][current_y-counter]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y-counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y-counter]=True
             #if we find a white piece we have to stop there as possible moves    
             elif current_y-counter>=0 and 'white' in pieces_position[i][current_y]:
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y-counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y-counter]=True
                 break
             #if we find a white piece we stop
             else:
@@ -543,9 +625,11 @@ def check_bishop(color,current_x,current_y):
             if current_y-counter>=0 and pieces_position[i][current_y-counter]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y-counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y-counter]=True
             #if we find a white piece we have to stop there as possible moves    
             elif current_y+counter>=0 and 'white' in pieces_position[i][current_y-counter]:
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y-counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y-counter]=True
                 break
             #if we find a white piece we stop
             else:
@@ -556,9 +640,11 @@ def check_bishop(color,current_x,current_y):
             if current_y+counter<=7 and pieces_position[i][current_y+counter]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y+counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y+counter]=True
             #if we find a white piece we have to stop there as possible moves    
             elif current_y+counter<=7 and 'white' in pieces_position[i][current_y+counter]:
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y+counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y+counter]=True
                 break
             #if we find a white piece we stop
             else:
@@ -569,9 +655,11 @@ def check_bishop(color,current_x,current_y):
             if current_y+counter<=7 and pieces_position[i][current_y+counter]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y+counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y+counter]=True
             #if we find a white piece we have to stop there as possible moves    
             elif current_y+counter<=7 and 'black' in pieces_position[i][current_y+counter]:
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y+counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y+counter]=True
                 break
             #if we find a white piece we stop
             else:
@@ -582,9 +670,11 @@ def check_bishop(color,current_x,current_y):
             if current_y-counter>=0 and pieces_position[i][current_y-counter]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y-counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y-counter]=True
             #if we find a white piece we have to stop there as possible moves    
             elif current_y-counter>=0 and 'black' in pieces_position[i][current_y]:
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y-counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y-counter]=True
                 break
             #if we find a white piece we stop
             else:
@@ -595,9 +685,11 @@ def check_bishop(color,current_x,current_y):
             if current_y-counter>=0 and pieces_position[i][current_y-counter]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y-counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y-counter]=True
             #if we find a white piece we have to stop there as possible moves    
             elif current_y+counter>=0 and 'black' in pieces_position[i][current_y-counter]:
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y-counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y-counter]=True
                 break
             #if we find a white piece we stop
             else:
@@ -608,9 +700,11 @@ def check_bishop(color,current_x,current_y):
             if current_y+counter<=7 and pieces_position[i][current_y+counter]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y+counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y+counter]=True
             #if we find a white piece we have to stop there as possible moves    
             elif current_y+counter<=7 and 'black' in pieces_position[i][current_y+counter]:
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y+counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[i][current_y+counter]=True
                 break
             #if we find a white piece we stop
             else:
@@ -621,7 +715,6 @@ def check_queen(color,current_x,current_y):
     check_rook(color,current_x,current_y)
     check_bishop(color,current_x,current_y)
     
-#TO END
 def check_king(color,current_x,current_y):
     #BLACK KING
     if color=='black':
@@ -629,48 +722,65 @@ def check_king(color,current_x,current_y):
         if current_x+1<=7:
             if 'black' not in pieces_position[current_x+1][current_y]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+1][current_y]=True
             if current_y+1<=7: 
                 if 'black' not in pieces_position[current_x+1][current_y+1]:
                     pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                    isYellow[current_x+1][current_y+1]=True
                 if 'black' not in pieces_position[current_x][current_y+1]:
                     pygame.draw.circle(board, YELLOW, ((current_x)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                    isYellow[current_x][current_y+1]=True
             if current_y-1>=0: 
                 if 'black' not in pieces_position[current_x+1][current_y-1]:
                     pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                    isYellow[current_x+1][current_y-1]=True
                 if 'black' not in pieces_position[current_x][current_y-1]:
                     pygame.draw.circle(board, YELLOW, ((current_x)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                    isYellow[current_x][current_y-1]=True
         
         if current_x-1>=0:  
             if 'black' not in pieces_position[current_x-1][current_y]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y]=True
             if current_y+1<=7 and 'black' not in pieces_position[current_x-1][current_y+1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y+1]=True
             if current_y-1>=0 and 'black' not in pieces_position[current_x-1][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y-1]=True
+    
     #WHITE KING
     else:
         if current_x+1<=7:
             if 'white' not in pieces_position[current_x+1][current_y]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x+1][current_y]=True
             if current_y+1<=7: 
                 if 'white' not in pieces_position[current_x+1][current_y+1]:
                     pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                    isYellow[current_x+1][current_y+1]=True
                 if 'white' not in pieces_position[current_x][current_y+1]:
                     pygame.draw.circle(board, YELLOW, ((current_x)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                    isYellow[current_x][current_y+1]=True
             if current_y-1>=0: 
                 if 'white' not in pieces_position[current_x+1][current_y-1]:
                     pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                    isYellow[current_x+1][current_y-1]=True
                 if 'white' not in pieces_position[current_x][current_y-1]:
                     pygame.draw.circle(board, YELLOW, ((current_x)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
-        
+                    isYellow[current_x][current_y-1]=True
+                    
         if current_x-1>=0:  
             if 'white' not in pieces_position[current_x-1][current_y]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y]=True
             if current_y+1<=7 and 'white' not in pieces_position[current_x-1][current_y+1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+                isYellow[current_x-1][current_y+1]=True
             if current_y-1>=0 and 'white' not in pieces_position[current_x-1][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
-    
+                isYellow[current_x-1][current_y-1]=True
+                        
 def draw_window_black(starting_position):
     #fill the background with a different color and update it
     #WIN.fill(WHITE)
@@ -769,8 +879,14 @@ def main_white():
                 current_x,current_y=pygame.mouse.get_pos()
                 current_squareX=current_x//CELL_SIZE
                 current_squareY=current_y//CELL_SIZE
+                if isYellow[current_squareX][current_squareY]==True:
+                    movePieces(current_piece,(current_squareX,current_squareY))
                 if pieces_position[current_squareX][current_squareY]!='':
-                    changeBoxColor(current_squareX,current_squareY)
+                    deleteLastPossibleMoves()
+                    current_piece=changeBoxColor(current_squareX,current_squareY)
+                    print(current_piece)
+                
+                
             pygame.display.update()
         #draw_window_white(starting_position=False)
         

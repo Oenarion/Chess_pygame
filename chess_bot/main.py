@@ -385,7 +385,7 @@ def check_rook(color,current_x,current_y):
             #if we find a black piece we stop
             else:
                 break
-        for i in range(0,current_x):
+        for i in range(current_x,-1,-1):
             if pieces_position[i][current_y]=='':
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2) 
             elif 'white' in pieces_position[i][current_y]:
@@ -404,7 +404,7 @@ def check_rook(color,current_x,current_y):
             #if we find a black piece we stop
             else:
                 break
-        for i in range(0,current_y):
+        for i in range(current_y,-1,-1):
             if pieces_position[current_x][i]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
@@ -427,7 +427,7 @@ def check_rook(color,current_x,current_y):
             #if we find a black piece we stop
             else:
                 break
-        for i in range(0,current_x):
+        for i in range(current_x,-1,-1):
             if pieces_position[i][current_y]=='':
                 pygame.draw.circle(board, YELLOW, ((i*CELL_SIZE+CELL_SIZE//2, (current_y)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)
             elif 'black' in pieces_position[i][current_y]:
@@ -446,7 +446,7 @@ def check_rook(color,current_x,current_y):
             #if we find a black piece we stop
             else:
                 break
-        for i in range(0,current_y):
+        for i in range(current_y,-1,-1):
             if pieces_position[current_x][i]=='':
                 #until we find a piece we can proceed to move in that square
                 pygame.draw.circle(board, YELLOW, ((current_x*CELL_SIZE+CELL_SIZE//2, (i)*CELL_SIZE+CELL_SIZE//2)), CELL_SIZE//3, 3*CELL_SIZE//2)

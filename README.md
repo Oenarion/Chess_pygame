@@ -17,7 +17,7 @@ Add:
   Castle ✅
 </li>
 <li>
-  En-passant ⬜️
+  En-passant ✅
 </li>
 <li>
   Promotions ⬜️

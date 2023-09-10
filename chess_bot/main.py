@@ -152,7 +152,9 @@ whiteRookMoved0=False
 whiteRookMoved1=False
 
 #variables for en-passant
-
+#array with enpassant possible and position for it
+WhiteEnPassantPossible=[False,-1]
+BlackEnPassantPossible=[False,-1]
 
 def draw_window_white(starting_position):
     #fill the background with a different color and update it
@@ -305,14 +307,41 @@ def deleteLastPossibleMoves():
 #once a yellow square is touched, we need to move the pieces
 #update positions and remove eaten ones
 def movePieces(piece,pos,currentTurn):
+    global WhiteEnPassantPossible
+    global BlackEnPassantPossible
+    
+    #CHECK for en-passant as first thing
+    if  BlackEnPassantPossible[0] and 'black_pawn' in piece and pos[0]==BlackEnPassantPossible[1]:
+        print("AM HERE")
+        current_piece=pieces_position[BlackEnPassantPossible[1]][pos[1]-1]
+        print(current_piece)
+        white_pieces.pop(current_piece)
+        pieces_position[BlackEnPassantPossible[1]][pos[1]-1]=''
+        pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
+        black_pieces[piece].x=pos[0]*CELL_SIZE
+        black_pieces[piece].y=pos[1]*CELL_SIZE
+        pieces_position[pos[0]][pos[1]]=piece
+
+    elif WhiteEnPassantPossible[0] and 'white_pawn' in piece and pos[0]==WhiteEnPassantPossible[1]:
+        current_piece=pieces_position[pos[0]][BlackEnPassantPossible[1]]
+        white_pieces.pop(current_piece)
+        pieces_position[pos[0]][BlackEnPassantPossible[1]]=''
+        pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
+        black_pieces[piece].x=pos[0]*CELL_SIZE
+        black_pieces[piece].y=pos[1]*CELL_SIZE
+        pieces_position[pos[0]][pos[1]]=piece 
+        
+    WhiteEnPassantPossible=[False,-1]
+    BlackEnPassantPossible=[False,-1]
     if currentTurn=='white':
         currentTurn='black'
     else:
         currentTurn='white'
     current_piece=pieces_position[pos[0]][pos[1]]
+    
     print(piece,current_piece)
     if 'black' in piece:
-        if 'king' in piece:
+        if 'king' in piece and 'black_rook' in current_piece:
             #long castle
             if 'black_rook_0' in current_piece:
                 pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
@@ -345,10 +374,15 @@ def movePieces(piece,pos,currentTurn):
         # print(pos[0],pos[1])
         # print((pos[0]//8*8),(pos[1]//8)*8)
         else:
-            if current_piece=='black_rook_0':
+            if piece=='black_king':
+                blackKingMoved=True
+            elif piece=='black_rook_0':
                 blackRookMoved0=True
-            elif current_piece=='black_rook_1':
+            elif piece=='black_rook_1':
                 blackRookMoved1=True
+            if 'black_pawn' in piece and black_pieces[piece].y//CELL_SIZE==1 and pos[1]==3:
+                #store the x value to know which way we can en passant
+                WhiteEnPassantPossible=[True,black_pieces[piece].x//CELL_SIZE]
             #NEED TO REDRAW EACH PIECE IN NEW POSITION!!
             if 'white' in current_piece:
                 white_pieces.pop(current_piece)
@@ -361,7 +395,7 @@ def movePieces(piece,pos,currentTurn):
         #WIN.blit(BLACK_PIECES_IMGS[newKey],(black_pieces[piece].x,black_pieces[piece].y))
         
     else:
-        if 'king' in piece:
+        if 'king' in piece and 'white_rook' in current_piece:
             #long castle
             if 'white_rook_0' in current_piece:
                 pieces_position[white_pieces[piece].x//CELL_SIZE][white_pieces[piece].y//CELL_SIZE]=''
@@ -390,20 +424,29 @@ def movePieces(piece,pos,currentTurn):
                 whiteRookMoved0=True
                 whiteRookMoved1=True
                 whiteKingMoved=True
-                
         else:
-            if current_piece=='white_rook_0':
+            #print(current_piece,pos,white_pieces[piece].x,white_pieces[piece].y)
+            if piece=='white_king':
+                whiteKingMoved=True
+            elif piece=='white_rook_0':
                 whiteRookMoved0=True
-            elif current_piece=='white_rook_1':
+            elif piece=='white_rook_1':
                 whiteRookMoved1=True
+            if 'white_pawn' in piece and white_pieces[piece].y//CELL_SIZE==6 and pos[1]==4:
+                #store the x value to know which way we can en passant
+                BlackEnPassantPossible=[True,white_pieces[piece].x//CELL_SIZE]
+                print(BlackEnPassantPossible)
             if 'black' in current_piece:
                 black_pieces.pop(current_piece)
             pieces_position[white_pieces[piece].x//CELL_SIZE][white_pieces[piece].y//CELL_SIZE]=''
             white_pieces[piece].x=pos[0]*CELL_SIZE
             white_pieces[piece].y=pos[1]*CELL_SIZE
             pieces_position[pos[0]][pos[1]]=piece
+    
+    #to redraw everything with modifications
     redrawChessboard()
     draw_updatedPieces()
+    print(pieces_position)
     return currentTurn
     
 #Changes the color of the box to red if we want to move a piece
@@ -474,6 +517,8 @@ def check_pawn(color,current_x,current_y):
             if current_x+1<=7 and current_y+1<=7 and "white" in pieces_position[current_x+1][current_y+1]:
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
                 isYellow[current_x+1][current_y+1]=True
+            if current_y==4:
+                en_passant('black',current_x,current_y)
     else:
         if current_y==6:
             #TO DRAW CIRCLES I NEED TO SET THE CENTER IN HALF OF THE SQUARE, I.E. CELL_SIZE+CELL_SIZE//2
@@ -869,8 +914,7 @@ def check_king(color,current_x,current_y):
             if current_y-1>=0 and 'white' not in pieces_position[current_x-1][current_y-1]:
                 pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
                 isYellow[current_x-1][current_y-1]=True
-   
-   
+     
 #ADD CONSTRAINT THAT WE CAN'T CASTLE IF UNDER ATTACK ON THAT CELL
 def short_castle(color):
     if color=='black':
@@ -892,6 +936,17 @@ def long_castle(color):
             isYellow[0][7]=True
             return True
     
+def en_passant(color,current_x,current_y):
+    print(BlackEnPassantPossible)
+    if color=='black' and BlackEnPassantPossible[0]:
+        if 'white_pawn' in pieces_position[current_x-1][current_y]:
+            pygame.draw.circle(board, YELLOW, ((current_x-1)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+            isYellow[current_x-1][current_y+1]=True
+        elif 'white_pawn' in pieces_position[current_x+1][current_y]:
+            pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y+1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
+            isYellow[current_x+1][current_y+1]=True
+    else:
+        ...
     
 def draw_window_black(starting_position):
     #fill the background with a different color and update it
@@ -976,6 +1031,8 @@ def main_white():
     running = True
     clock = pygame.time.Clock()
 
+    global WhiteEnPassantPossible
+    global BlackEnPassantPossible
     #TURNS! white starts ofc
     currentTurn='white'
     #pieces creation

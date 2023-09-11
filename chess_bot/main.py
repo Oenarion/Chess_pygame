@@ -153,8 +153,8 @@ whiteRookMoved1=False
 
 #variables for en-passant
 #array with enpassant possible and position for it
-WhiteEnPassantPossible=[False,-1]
-BlackEnPassantPossible=[False,-1]
+WhiteEnPassantPossible=[False,-1,-1]
+BlackEnPassantPossible=[False,-1,-1]
 
 def draw_window_white(starting_position):
     #fill the background with a different color and update it
@@ -315,12 +315,13 @@ def movePieces(piece,pos,currentTurn):
     global blackRookMoved0
     global blackRookMoved1
     
-    print(WhiteEnPassantPossible,BlackEnPassantPossible)
+    print(WhiteEnPassantPossible,BlackEnPassantPossible,pos[0],pos[1])
     #CHECK for en-passant as first thing
     
     #TO DO!
-    if  BlackEnPassantPossible[0] and 'black_pawn' in piece and (black_pieces[piece].x//CELL_SIZE==BlackEnPassantPossible[1]+1 or black_pieces[piece].x//CELL_SIZE==BlackEnPassantPossible[1]-1):
+    if  BlackEnPassantPossible[0] and 'black_pawn' in piece and pos[0]==BlackEnPassantPossible[1] and pos[1]==BlackEnPassantPossible[-1]+1:
         current_piece=pieces_position[BlackEnPassantPossible[1]][pos[1]-1]
+        print("black en passant",current_piece)
         white_pieces.pop(current_piece)
         pieces_position[BlackEnPassantPossible[1]][pos[1]-1]=''
         pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
@@ -328,9 +329,9 @@ def movePieces(piece,pos,currentTurn):
         black_pieces[piece].y=pos[1]*CELL_SIZE
         pieces_position[pos[0]][pos[1]]=piece
 
-    elif WhiteEnPassantPossible[0] and 'white_pawn' in piece and pos[0]==WhiteEnPassantPossible[1]:
+    elif WhiteEnPassantPossible[0] and 'white_pawn' in piece and pos[0]==WhiteEnPassantPossible[1] and pos[1]==WhiteEnPassantPossible[-1]-1:
         current_piece=pieces_position[WhiteEnPassantPossible[1]][pos[1]+1]
-        print(current_piece,WhiteEnPassantPossible[1],pos[1]+1)
+        print("white en passant", current_piece)
         black_pieces.pop(current_piece)
         pieces_position[WhiteEnPassantPossible[1]][pos[1]+1]=''
         pieces_position[white_pieces[piece].x//CELL_SIZE][white_pieces[piece].y//CELL_SIZE]=''
@@ -338,8 +339,8 @@ def movePieces(piece,pos,currentTurn):
         white_pieces[piece].y=pos[1]*CELL_SIZE
         pieces_position[pos[0]][pos[1]]=piece 
         
-    WhiteEnPassantPossible=[False,-1]
-    BlackEnPassantPossible=[False,-1]
+    WhiteEnPassantPossible=[False,-1,-1]
+    BlackEnPassantPossible=[False,-1,-1]
     if currentTurn=='white':
         currentTurn='black'
     else:
@@ -389,7 +390,7 @@ def movePieces(piece,pos,currentTurn):
                 blackRookMoved1=True
             if 'black_pawn' in piece and black_pieces[piece].y//CELL_SIZE==1 and pos[1]==3:
                 #store the x value to know which way we can en passant
-                WhiteEnPassantPossible=[True,black_pieces[piece].x//CELL_SIZE]
+                WhiteEnPassantPossible=[True,black_pieces[piece].x//CELL_SIZE,pos[1]]
                 print(WhiteEnPassantPossible)
             #NEED TO REDRAW EACH PIECE IN NEW POSITION!!
             if 'white' in current_piece:
@@ -441,8 +442,8 @@ def movePieces(piece,pos,currentTurn):
             elif piece=='white_rook_1':
                 whiteRookMoved1=True
             if 'white_pawn' in piece and white_pieces[piece].y//CELL_SIZE==6 and pos[1]==4:
-                #store the x value to know which way we can en passant
-                BlackEnPassantPossible=[True,white_pieces[piece].x//CELL_SIZE]
+                #store the x value to know which way we can en passant, either left or right
+                BlackEnPassantPossible=[True,white_pieces[piece].x//CELL_SIZE,pos[1]]
                 print(BlackEnPassantPossible)
             if 'black' in current_piece:
                 black_pieces.pop(current_piece)

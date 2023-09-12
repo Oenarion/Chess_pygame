@@ -37,6 +37,7 @@ WHITE=(255,255,255)
 GREEN=(118,150,86)
 RED=(136,8,8)
 YELLOW=(236,234,152)
+GREY=(119,136,153)
 FPS=60
 
 #START PIECES IMG CREATION
@@ -155,6 +156,11 @@ whiteRookMoved1=False
 #array with enpassant possible and position for it
 WhiteEnPassantPossible=[False,-1,-1]
 BlackEnPassantPossible=[False,-1,-1]
+
+#variables for promotion
+#3 is the starting number so that we don't have the same pieces called the same way
+numberPromotedPiece=3
+promotionCheck=False
 
 def draw_window_white(starting_position):
     #fill the background with a different color and update it
@@ -285,7 +291,57 @@ def draw_updatedPieces():
         newKey=ignoreNums[0]+'_'+ignoreNums[1]
         WIN.blit(WHITE_PIECES_IMGS[newKey],(white_pieces[key].x,white_pieces[key].y))
 
+
+def draw_promotionPieces(color,pos):
+    if color=='black':
+        WIN.blit(black_queen,(pos[0]*CELL_SIZE,(pos[1]-1)*CELL_SIZE))
+        WIN.blit(black_rook,(pos[0]*CELL_SIZE,(pos[1]-2)*CELL_SIZE))
+        WIN.blit(black_bishop,(pos[0]*CELL_SIZE,(pos[1]-3)*CELL_SIZE))
+        WIN.blit(black_knight,(pos[0]*CELL_SIZE,(pos[1]-4)*CELL_SIZE))
+    else:
+        WIN.blit(white_queen,(pos[0]*CELL_SIZE,(pos[1]+1)*CELL_SIZE))
+        WIN.blit(white_rook,(pos[0]*CELL_SIZE,(pos[1]+2)*CELL_SIZE))
+        WIN.blit(white_bishop,(pos[0]*CELL_SIZE,(pos[1]+3)*CELL_SIZE))
+        WIN.blit(white_knight,(pos[0]*CELL_SIZE,(pos[1]+4)*CELL_SIZE))
 #handles the deletion of multiple red squares, we have at most once 
+
+def draw_piecesBeforePromotion(color,pos):
+    #Have to temporaly delete elements in the way of promotion pieces, to be able to choose the correct one
+    if color=='black':
+        for key in black_pieces:
+            ignoreNums=key.split('_')
+            newKey=ignoreNums[0]+'_'+ignoreNums[1]
+            if pos[0]==black_pieces[key].x//CELL_SIZE and ((pos[1]==black_pieces[key].y//CELL_SIZE)-1 or (pos[1]==black_pieces[key].y//CELL_SIZE)-2 or (pos[1]==black_pieces[key].y//CELL_SIZE)-3 or (pos[1]==black_pieces[key].y//CELL_SIZE)-4):
+                continue
+            else:    
+                WIN.blit(BLACK_PIECES_IMGS[newKey],(black_pieces[key].x,black_pieces[key].y))
+
+        for key in white_pieces:
+            ignoreNums=key.split('_')
+            newKey=ignoreNums[0]+'_'+ignoreNums[1]
+            print(pos[0],pos[1],white_pieces[key].x,white_pieces[key].y)
+            if pos[0]==white_pieces[key].x//CELL_SIZE and (pos[1]==(white_pieces[key].y//CELL_SIZE)-1 or pos[1]==(white_pieces[key].y//CELL_SIZE)-2 or (pos[1]==white_pieces[key].y//CELL_SIZE)-3 or (pos[1]==white_pieces[key].y//CELL_SIZE)-4):
+                print("hello")
+                continue
+            else:    
+                WIN.blit(WHITE_PIECES_IMGS[newKey],(white_pieces[key].x,white_pieces[key].y))
+    else:
+        for key in black_pieces:
+            ignoreNums=key.split('_')
+            newKey=ignoreNums[0]+'_'+ignoreNums[1]
+            if pos[0]==black_pieces[key].x//CELL_SIZE and ((pos[1]==black_pieces[key].y//CELL_SIZE)+1 or (pos[1]==black_pieces[key].y//CELL_SIZE)+2 or (pos[1]==black_pieces[key].y//CELL_SIZE)+3 or (pos[1]==black_pieces[key].y//CELL_SIZE)+4):
+                continue
+            else:    
+                WIN.blit(BLACK_PIECES_IMGS[newKey],(black_pieces[key].x,black_pieces[key].y))
+
+        for key in white_pieces:
+            ignoreNums=key.split('_')
+            newKey=ignoreNums[0]+'_'+ignoreNums[1]
+            if pos[0]==white_pieces[key].x//CELL_SIZE and ((pos[1]==white_pieces[key].y//CELL_SIZE)+1 or (pos[1]==white_pieces[key].y//CELL_SIZE)+2 or (pos[1]==white_pieces[key].y//CELL_SIZE)+3 or (pos[1]==white_pieces[key].y//CELL_SIZE)+4):
+                continue
+            else:    
+                WIN.blit(WHITE_PIECES_IMGS[newKey],(white_pieces[key].x,white_pieces[key].y))
+
 def redrawChessboard():
     board.fill(WHITE)
     for x in range(0, 8, 2):
@@ -315,10 +371,9 @@ def movePieces(piece,pos,currentTurn):
     global blackRookMoved0
     global blackRookMoved1
     
-    print(WhiteEnPassantPossible,BlackEnPassantPossible,pos[0],pos[1])
+    print(white_pieces,black_pieces)
     #CHECK for en-passant as first thing
     
-    #TO DO!
     if  BlackEnPassantPossible[0] and 'black_pawn' in piece and pos[0]==BlackEnPassantPossible[1] and pos[1]==BlackEnPassantPossible[-1]+1:
         current_piece=pieces_position[BlackEnPassantPossible[1]][pos[1]-1]
         print("black en passant",current_piece)
@@ -341,11 +396,19 @@ def movePieces(piece,pos,currentTurn):
         
     WhiteEnPassantPossible=[False,-1,-1]
     BlackEnPassantPossible=[False,-1,-1]
+    
     if currentTurn=='white':
         currentTurn='black'
     else:
         currentTurn='white'
     current_piece=pieces_position[pos[0]][pos[1]]
+    
+    if 'black_pawn' in piece and pos[1]==7:
+        promotion('black',piece,pos)
+        return currentTurn
+    elif 'white_pawn' in piece and pos[1]==0:
+        promotion('white',piece,pos)
+        return currentTurn
     
     print(piece,current_piece)
     if 'black' in piece:
@@ -965,6 +1028,128 @@ def en_passant(color,current_x,current_y):
                 pygame.draw.circle(board, YELLOW, ((current_x+1)*CELL_SIZE+CELL_SIZE//2, (current_y-1)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
                 isYellow[current_x+1][current_y-1]=True
     
+def promotion(color,piece,pos):
+    global promotionCheck
+    print("SUSSUS AMOGUS ARMONIGAS SASASAS")    
+    if color=='black':
+        pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
+        black_pieces[piece].x=pos[0]*CELL_SIZE
+        black_pieces[piece].y=pos[1]*CELL_SIZE
+        #print(pieces_position[pos[0]][pos[1]])
+        if 'white' in pieces_position[pos[0]][pos[1]]:
+            white_pieces.pop(pieces_position[pos[0]][pos[1]])
+        redrawChessboard()
+        # print(white_pieces,pos[0],pos[1],(pos[1]-1)*CELL_SIZE,(pos[1]-2)*CELL_SIZE)
+        #print(black_queen,pos[0]*CELL_SIZE,(pos[1]-1)*CELL_SIZE)
+        pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]-2)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]-3)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]-4)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        WIN.blit(board,board.get_rect())
+        draw_piecesBeforePromotion(color,pos)
+        draw_promotionPieces(color,pos)
+        pygame.display.update()
+        promotionCheck=True
+        waitingForPromotion(color,piece,pos[0],pos[1]-1,pos[1]-2,pos[1]-3,pos[1]-4)
+        redrawChessboard()
+        draw_updatedPieces()
+    else:
+        pieces_position[white_pieces[piece].x//CELL_SIZE][white_pieces[piece].y//CELL_SIZE]=''
+        white_pieces[piece].x=pos[0]*CELL_SIZE
+        white_pieces[piece].y=pos[1]*CELL_SIZE
+        if 'black' in pieces_position[pos[0]][pos[1]]:
+            black_pieces.pop(pieces_position[pos[0]][pos[1]])
+        redrawChessboard()
+        pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]+2)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]+3)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]+4)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        WIN.blit(board,board.get_rect())
+        draw_piecesBeforePromotion(color,pos)
+        draw_promotionPieces(color,pos)
+        pygame.display.update()
+        promotionCheck=True
+        waitingForPromotion(color,piece,pos[0],pos[1]+1,pos[1]+2,pos[1]+3,pos[1]+4)
+        redrawChessboard()
+        draw_updatedPieces()
+       
+       
+def waitingForPromotion(color,piece,pos_x,pos_y1,pos_y2,pos_y3,pos_y4):
+    global numberPromotedPiece
+    global promotionCheck
+    running=True
+    print("Zio pera pereira")
+    while running:
+        for event in pygame.event.get():
+            if color=='black':
+                if event.type == pygame.MOUSEBUTTONUP:
+                    current_x,current_y=pygame.mouse.get_pos()
+                    current_squareX=current_x//CELL_SIZE
+                    current_squareY=current_y//CELL_SIZE
+                    if current_squareX==pos_x and current_squareY==pos_y1:
+                        newPieceName='black_queen_'+str(numberPromotedPiece)
+                        pieces_position[pos_x][pos_y1+1]=newPieceName
+                        black_pieces[newPieceName]=black_pieces[piece]
+                        del black_pieces[piece]
+                        numberPromotedPiece+=1
+                        running=False
+                    elif current_squareX==pos_x and current_squareY==pos_y2:
+                        newPieceName='black_rook_'+str(numberPromotedPiece)
+                        pieces_position[pos_x][pos_y1+1]=newPieceName
+                        black_pieces[newPieceName]=black_pieces[piece]
+                        del black_pieces[piece]
+                        numberPromotedPiece+=1
+                        running=False
+                    elif current_squareX==pos_x and current_squareY==pos_y3:
+                        newPieceName='black_bishop_'+str(numberPromotedPiece)
+                        pieces_position[pos_x][pos_y1+1]=newPieceName
+                        black_pieces[newPieceName]=black_pieces[piece]
+                        del black_pieces[piece]
+                        numberPromotedPiece+=1
+                        running=False
+                    elif current_squareX==pos_x and current_squareY==pos_y4:
+                        newPieceName='black_knight_'+str(numberPromotedPiece)
+                        pieces_position[pos_x][pos_y1+1]=newPieceName
+                        black_pieces[newPieceName]=black_pieces[piece]
+                        del black_pieces[piece]
+                        numberPromotedPiece+=1
+                        running=False
+            else:
+                if event.type == pygame.MOUSEBUTTONUP:
+                    current_x,current_y=pygame.mouse.get_pos()
+                    current_squareX=current_x//CELL_SIZE
+                    current_squareY=current_y//CELL_SIZE
+                    if current_squareX==pos_x and current_squareY==pos_y1:
+                        newPieceName='white_queen_'+str(numberPromotedPiece)
+                        pieces_position[pos_x][pos_y1-1]=newPieceName
+                        white_pieces[newPieceName]=white_pieces[piece]
+                        del white_pieces[piece]
+                        numberPromotedPiece+=1
+                        running=False
+                    elif current_squareX==pos_x and current_squareY==pos_y2:
+                        newPieceName='white_rook_'+str(numberPromotedPiece)
+                        pieces_position[pos_x][pos_y1-1]=newPieceName
+                        white_pieces[newPieceName]=white_pieces[piece]
+                        del white_pieces[piece]
+                        numberPromotedPiece+=1
+                        running=False
+                    elif current_squareX==pos_x and current_squareY==pos_y3:
+                        newPieceName='white_bishop_'+str(numberPromotedPiece)
+                        pieces_position[pos_x][pos_y1-1]=newPieceName
+                        white_pieces[newPieceName]=white_pieces[piece]
+                        del white_pieces[piece]
+                        numberPromotedPiece+=1
+                        running=False
+                    elif current_squareX==pos_x and current_squareY==pos_y4:
+                        newPieceName='white_knight_'+str(numberPromotedPiece)
+                        pieces_position[pos_x][pos_y1-1]=newPieceName
+                        white_pieces[newPieceName]=white_pieces[piece]
+                        del white_pieces[piece]
+                        numberPromotedPiece+=1
+                        running=False
+    promotionCheck=False            
+    print(pieces_position)
+    
 def draw_window_black(starting_position):
     #fill the background with a different color and update it
     #WIN.fill(WHITE)
@@ -1060,6 +1245,13 @@ def main_white():
     while running:
         clock.tick(FPS)
         for event in pygame.event.get():
+            # if promotionCheck==True:
+            #     print(current_piece)
+            #     if 'black' in current_piece:
+            #         print("entering promotionCheck!")
+            #         x=black_pieces[current_piece].x
+            #         y=black_pieces[current_piece].y
+            #         waitingForPromotion(current_piece,x,y-1,y-2,y-3,y-4)
             if event.type == pygame.QUIT:
                     running = False
             #When mouse is pushed
@@ -1070,7 +1262,7 @@ def main_white():
                 if isYellow[current_squareX][current_squareY]==True:
                     currentTurn=movePieces(current_piece,(current_squareX,current_squareY),currentTurn)
                     deleteLastPossibleMoves()
-                if pieces_position[current_squareX][current_squareY]!='' and currentTurn in pieces_position[current_squareX][current_squareY]: 
+                elif pieces_position[current_squareX][current_squareY]!='' and currentTurn in pieces_position[current_squareX][current_squareY]: 
                     deleteLastPossibleMoves()
                     current_piece=changeBoxColor(current_squareX,current_squareY)
                     #print(current_piece)

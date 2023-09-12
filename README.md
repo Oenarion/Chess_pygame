@@ -20,7 +20,10 @@ Add:
   En-passant ✅
 </li>
 <li>
-  Promotions ⬜️
+  Promotions ✅
+</li>
+<li>
+  Choosable timer ⬜️
 </li>
 <li>
   Options menu ⬜️

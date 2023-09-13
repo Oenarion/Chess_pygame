@@ -1227,6 +1227,57 @@ def draw_window_black(starting_position):
             WIN.blit(white_pawn,(CELL_SIZE*i,CELL_SIZE))
             white_pawn_pieces.append(pygame.Rect(CELL_SIZE*i,CELL_SIZE,CELL_SIZE,CELL_SIZE))
 
+def gameOver(color):
+    #draw winning rectangle
+    #pygame.draw.rect(board,YELLOW,(2*CELL_SIZE,3*CELL_SIZE,4*CELL_SIZE,2*CELL_SIZE))
+    
+    #delete positions in the winning screen
+    for i in range(2,6):
+        for j in range(3,5):
+            pieces_position[i][j]=''
+            
+    #redraw pieces that are not in the winning rectangle
+    for key in black_pieces:
+            ignoreNums=key.split('_')
+            newKey=ignoreNums[0]+'_'+ignoreNums[1]
+            if black_pieces[key].x//CELL_SIZE>=2 and black_pieces[key].x//CELL_SIZE<=5 and black_pieces[key].y//CELL_SIZE>=3 and black_pieces[key].y//CELL_SIZE<=4:
+                continue
+            else:    
+                WIN.blit(BLACK_PIECES_IMGS[newKey],(black_pieces[key].x,black_pieces[key].y))
+
+    for key in white_pieces:
+        ignoreNums=key.split('_')
+        newKey=ignoreNums[0]+'_'+ignoreNums[1]
+        if white_pieces[key].x//CELL_SIZE>=2 and white_pieces[key].x//CELL_SIZE<=5 and white_pieces[key].y//CELL_SIZE>=3 and white_pieces[key].y//CELL_SIZE<=4:
+            continue
+        else:    
+            WIN.blit(WHITE_PIECES_IMGS[newKey],(white_pieces[key].x,white_pieces[key].y))
+
+    # PLAY_WHITE_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=(GRID_SIZE//2, 250), 
+    #                         text_input=color.capitalize()+" WON!", font=get_font(20), base_color="#d7fcd4", hovering_color="White")
+    while True:
+        MENU_TEXT = get_font(50).render(color.capitalize()+" WON!", True, "#000080")
+        MENU_RECT = MENU_TEXT.get_rect(center=(GRID_SIZE//2, 300))
+        MENU_MOUSE_POS = pygame.mouse.get_pos()
+        
+        QUIT_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=(GRID_SIZE//2, 400), 
+                                text_input="MAIN MENU", font=get_font(20), base_color="#d7fcd4", hovering_color="White")
+        
+        WIN.blit(MENU_TEXT,MENU_RECT)
+        
+        for button in [QUIT_BUTTON]:
+                button.changeColor(MENU_MOUSE_POS)
+                button.update(WIN)
+            
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    main_menu()
+
+        pygame.display.update()
 
 #variables
 def main_white():
@@ -1245,15 +1296,19 @@ def main_white():
     while running:
         clock.tick(FPS)
         for event in pygame.event.get():
-            # if promotionCheck==True:
-            #     print(current_piece)
-            #     if 'black' in current_piece:
-            #         print("entering promotionCheck!")
-            #         x=black_pieces[current_piece].x
-            #         y=black_pieces[current_piece].y
-            #         waitingForPromotion(current_piece,x,y-1,y-2,y-3,y-4)
+
+            #DECLARE VICTORY OF ONE SIDE!
+            
+            if 'black_king' not in black_pieces:
+                gameOver('white')
+            if 'white_king' not in white_pieces:
+                gameOver('black')
+                
+            #close game
             if event.type == pygame.QUIT:
                     running = False
+                    
+                    
             #When mouse is pushed
             if event.type == pygame.MOUSEBUTTONUP:
                 current_x,current_y=pygame.mouse.get_pos()

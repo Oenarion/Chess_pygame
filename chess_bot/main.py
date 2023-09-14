@@ -163,6 +163,9 @@ numberPromotedPiece=3
 promotionCheck=False
 
 #timer variables
+timers=[60,180,300,600,900,1800]
+texts=['01:00','03:00','05:00','10:00','15:00','30:00']
+
 white_counter=600
 black_counter=600
 white_text ='10:00'
@@ -1311,13 +1314,8 @@ def main_white():
     clock = pygame.time.Clock()
     
     global white_counter,black_counter,white_text,black_text,font
-    # white_counter=600
-    # black_counter=600
-    # white_text ='10:00'
-    # black_text='10:00'
     #creates an event every second so that timer gets decreased every time
     pygame.time.set_timer(pygame.USEREVENT, 1000)
-    # font = pygame.font.SysFont('Consolas', 30)
 
     global WhiteEnPassantPossible
     global BlackEnPassantPossible
@@ -1347,7 +1345,7 @@ def main_white():
                     if numOfSeconds<10:
                         white_text = (str(numOfMinutes)+':'+'0'+str(numOfSeconds)).rjust(3) if white_counter > 0 else gameOver('black')
                     else:
-                        white_text = ('0'+str(numOfMinutes)+':'+str(numOfSeconds)).rjust(3) if white_counter > 0 else gameOver('black')
+                        white_text = (str(numOfMinutes)+':'+str(numOfSeconds)).rjust(3) if white_counter > 0 else gameOver('black')
                 
             elif event.type == pygame.USEREVENT and currentTurn=='black':
                 black_counter -= 1
@@ -1355,14 +1353,14 @@ def main_white():
                 numOfSeconds=black_counter%60
                 if numOfMinutes<10:
                     if numOfSeconds<10:
-                        black_text = '0'+str(numOfMinutes)+':'+'0'+str(numOfSeconds) if black_counter > 0 else gameOver('white')
+                        black_text = ('0'+str(numOfMinutes)+':'+'0'+str(numOfSeconds)) if black_counter > 0 else gameOver('white')
                     else:
-                        black_text = '0'+str(numOfMinutes)+':'+str(numOfSeconds) if black_counter > 0 else gameOver('white')
+                        black_text = ('0'+str(numOfMinutes)+':'+str(numOfSeconds)) if black_counter > 0 else gameOver('white')
                 else:
                     if numOfSeconds<10:
-                        black_text = str(numOfMinutes)+':'+'0'+str(numOfSeconds) if black_counter > 0 else gameOver('white')
+                        black_text = (str(numOfMinutes)+':'+'0'+str(numOfSeconds)) if black_counter > 0 else gameOver('white')
                     else:
-                        black_text = str(numOfMinutes)+':'+str(numOfSeconds) if black_counter > 0 else gameOver('white')
+                        black_text = (str(numOfMinutes)+':'+str(numOfSeconds)) if black_counter > 0 else gameOver('white')
                 
             redrawTimer(font,white_text,black_text)
             #DECLARE VICTORY OF ONE SIDE!                
@@ -1419,28 +1417,75 @@ def main_black():
 #TO ADD
 def options():
     while True:
+        WIN.blit(BG, (0, 0))
+
         OPTIONS_MOUSE_POS = pygame.mouse.get_pos()
 
-        WIN.fill("white")
+        OPTIONS_TEXT = get_font(50).render("SET GAME TIMER", True, "#b68f40")
+        OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=((GRID_SIZE//2)+50, 100))
 
-        OPTIONS_TEXT = get_font(45).render("This is the OPTIONS screen.", True, "Black")
-        OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(640, 260))
+        OPTION_RECT=pygame.transform.scale(
+            pygame.image.load("chess_bot/assets/Quit Rect.png"),(200,100))
+        
+        TIME1_BUTTON = Button(image=OPTION_RECT, pos=(200, 250), 
+                            text_input="1 MIN", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+        TIME2_BUTTON = Button(image=OPTION_RECT, pos=(420, 250), 
+                            text_input="3 MIN", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+        TIME3_BUTTON = Button(image=OPTION_RECT, pos=(640, 250), 
+                            text_input="5 MIN", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+        TIME4_BUTTON = Button(image=OPTION_RECT, pos=(200, 400), 
+                            text_input="10 MIN", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+        TIME5_BUTTON = Button(image=OPTION_RECT, pos=(420, 400), 
+                            text_input="15 MIN", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+        TIME6_BUTTON = Button(image=OPTION_RECT, pos=(640, 400), 
+                            text_input="30 MIN", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+        QUIT_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE)//2+50, 550), 
+                            text_input="RETURN TO MENU", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+
+        # CURRENT_HIGLIGHT_BUTTON=TIME4_BUTTON
+        # CURRENT_BUTTON_TO_CHANGE=''
+        # changeFlag=False
+        
         WIN.blit(OPTIONS_TEXT, OPTIONS_RECT)
 
-        OPTIONS_BACK = Button(image=None, pos=(640, 460), 
-                            text_input="BACK", font=get_font(75), base_color="Black", hovering_color="Green")
-
-        OPTIONS_BACK.changeColor(OPTIONS_MOUSE_POS)
-        OPTIONS_BACK.update(WIN)
-
+        for button in [TIME1_BUTTON,TIME2_BUTTON,TIME3_BUTTON,TIME4_BUTTON,TIME5_BUTTON,TIME6_BUTTON,QUIT_BUTTON]:
+            button.changeColor(OPTIONS_MOUSE_POS)
+            button.update(WIN)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if OPTIONS_BACK.checkForInput(OPTIONS_MOUSE_POS):
+                if TIME1_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    changeTime(0)
+                    
+                    # CURRENT_BUTTON_TO_CHANGE=TIME1_BUTTON
+                    # print(TIME1_BUTTON.base_color)
+                    # changeFlag=True
+                if TIME2_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    changeTime(1)
+                if TIME3_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    changeTime(2)     
+                if TIME4_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    changeTime(3)
+                if TIME5_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    changeTime(4)
+                if TIME6_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    changeTime(5)
+                    
+                if QUIT_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
                     main_menu()
-
+                    
+        # if changeFlag:     
+        #     CURRENT_BUTTON_TO_CHANGE.changeColorPermanently(YELLOW)
+        #     CURRENT_BUTTON_TO_CHANGE.update(WIN)
+        #     CURRENT_HIGLIGHT_BUTTON.changeColorPermanently("#d7fcd4")
+        #     CURRENT_HIGLIGHT_BUTTON.update(WIN)
+        #     CURRENT_HIGLIGHT_BUTTON=CURRENT_BUTTON_TO_CHANGE
+        #     changeFlag=not changeFlag
+        #     print(CURRENT_BUTTON_TO_CHANGE.base_color)
+        
         pygame.display.update()
 
 
@@ -1453,16 +1498,16 @@ def main_menu():
         MENU_TEXT = get_font(50).render("MAIN MENU", True, "#b68f40")
         MENU_RECT = MENU_TEXT.get_rect(center=((GRID_SIZE//2)+50, 100))
 
-        PLAY_WHITE_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 250), 
-                            text_input="PLAY_WHITE", font=get_font(20), base_color="#d7fcd4", hovering_color="White")
-        PLAY_BLACK_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 400), 
-                            text_input="PLAY_BLACK", font=get_font(20), base_color="#d7fcd4", hovering_color="White")
+        PLAY_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 250), 
+                            text_input="PLAY", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+        OPTIONS_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 400), 
+                            text_input="OPTIONS", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
         QUIT_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Quit Rect.png"), pos=((GRID_SIZE//2)+50, 550), 
-                            text_input="QUIT", font=get_font(20), base_color="#d7fcd4", hovering_color="White")
+                            text_input="QUIT", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
 
         WIN.blit(MENU_TEXT, MENU_RECT)
 
-        for button in [PLAY_WHITE_BUTTON, PLAY_BLACK_BUTTON, QUIT_BUTTON]:
+        for button in [PLAY_BUTTON, OPTIONS_BUTTON, QUIT_BUTTON]:
             button.changeColor(MENU_MOUSE_POS)
             button.update(WIN)
         
@@ -1471,15 +1516,58 @@ def main_menu():
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if PLAY_WHITE_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    main_white()
-                if PLAY_BLACK_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    main_black()
+                if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    play_menu()
+                if OPTIONS_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    options()
                 if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
                     pygame.quit()
                     sys.exit()
 
         pygame.display.update()
+
+def play_menu():
+    while True:
+        WIN.blit(BG, (0, 0))
+
+        PLAY_MOUSE_POS = pygame.mouse.get_pos()
+
+        PLAY_TEXT = get_font(50).render("PLAY MENU", True, "#b68f40")
+        PLAY_RECT = PLAY_TEXT.get_rect(center=((GRID_SIZE//2)+50, 100))
+
+        PLAY_WHITE_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 250), 
+                            text_input="PLAY WHITE", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+        PLAY_BLACK_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 400), 
+                            text_input="PLAY BLACK", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+        QUIT_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 550), 
+                            text_input="RETURN TO MENU", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+
+        WIN.blit(PLAY_TEXT, PLAY_RECT)
+
+        for button in [PLAY_WHITE_BUTTON, PLAY_BLACK_BUTTON, QUIT_BUTTON]:
+            button.changeColor(PLAY_MOUSE_POS)
+            button.update(WIN)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if PLAY_WHITE_BUTTON.checkForInput(PLAY_MOUSE_POS):
+                    main_white()
+                if PLAY_BLACK_BUTTON.checkForInput(PLAY_MOUSE_POS):
+                    main_black()
+                if QUIT_BUTTON.checkForInput(PLAY_MOUSE_POS):
+                    main_menu()
+
+        pygame.display.update()
+
+def changeTime(num):
+    global white_counter,black_counter,white_text,black_text
+    white_counter=timers[num]
+    black_counter=timers[num]
+    white_text=texts[num]
+    black_text=texts[num]
 
 if __name__ == "__main__":
     main_menu()

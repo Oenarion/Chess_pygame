@@ -27,3 +27,8 @@ class Button():
 			self.text = self.font.render(self.text_input, True, self.hovering_color)
 		else:
 			self.text = self.font.render(self.text_input, True, self.base_color)
+   
+	def changeColorPermanently(self,color):
+		self.base_color = color
+		self.text = self.font.render(self.text_input, True, self.base_color)
+		

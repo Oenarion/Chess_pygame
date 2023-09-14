@@ -163,6 +163,11 @@ numberPromotedPiece=3
 promotionCheck=False
 
 #timer variables
+
+#this variable is used when we surrend and want to start a fresh game without changing timer
+#so that the timer restarts
+lastSelectedNum=3
+
 timers=[60,180,300,600,900,1800]
 texts=['01:00','03:00','05:00','10:00','15:00','30:00']
 
@@ -180,6 +185,7 @@ SURREND_WHITE_BUTTON = Button(image=SURREND_RECT, pos=(815, 640),
                             text_input="Surrend", font=get_font(10), base_color="#d7fcd4", hovering_color=YELLOW)
 SURREND_BLACK_BUTTON = Button(image=SURREND_RECT, pos=(815, 120), 
                             text_input="Surrend", font=get_font(10), base_color="#d7fcd4", hovering_color=YELLOW)
+
 
 
 def draw_window_white(starting_position):
@@ -251,9 +257,8 @@ def draw_window_white(starting_position):
         print(pieces_position)
         print(isGreen)
 
-#player is playing WHITE                   
+#player is playing WHITE
 def white_pieces_creation():
-    
     #create a rectangle for every piece and place in a dictionary piece position
     black_king_piece=pygame.Rect(CELL_SIZE*4,0,CELL_SIZE,CELL_SIZE)
     black_pieces["black_king"]=black_king_piece
@@ -302,6 +307,7 @@ def white_pieces_creation():
     for i in range(8):
         white_pawn_pieces.append(pygame.Rect(CELL_SIZE*i,CELL_SIZE*6,CELL_SIZE,CELL_SIZE))
         white_pieces[f"white_pawn_{i}"]=white_pawn_pieces[i]
+
     
 #using the dictionary we redraw each piece in it's current position
 def draw_updatedPieces():
@@ -444,6 +450,8 @@ def movePieces(piece,pos,currentTurn):
                 black_pieces['black_rook_0'].x=3*CELL_SIZE
                 black_pieces[piece].x=2*CELL_SIZE
                 #updating grid to check for future movements
+                pieces_position[0][0]=''
+                pieces_position[4][0]=''
                 pieces_position[2][0]=piece
                 pieces_position[3][0]='black_rook_0'
                 
@@ -458,6 +466,7 @@ def movePieces(piece,pos,currentTurn):
                 black_pieces['black_rook_1'].x=5*CELL_SIZE
                 black_pieces[piece].x=6*CELL_SIZE
                 #updating grid to check for future movements
+                pieces_position[7][0]=''
                 pieces_position[6][0]=piece
                 pieces_position[5][0]='black_rook_1'
                 
@@ -499,6 +508,8 @@ def movePieces(piece,pos,currentTurn):
                 white_pieces['white_rook_0'].x=3*CELL_SIZE
                 white_pieces[piece].x=2*CELL_SIZE
                 #updating grid to check for future movements
+                pieces_position[0][7]=''
+                pieces_position[4][7]=''
                 pieces_position[2][7]=piece
                 pieces_position[3][7]='white_rook_0'
                 
@@ -513,6 +524,7 @@ def movePieces(piece,pos,currentTurn):
                 white_pieces['white_rook_1'].x=5*CELL_SIZE
                 white_pieces[piece].x=6*CELL_SIZE
                 #updating grid to check for future movements
+                pieces_position[7][7]=''
                 pieces_position[6][7]=piece
                 pieces_position[5][7]='white_rook_1'
                 
@@ -1180,82 +1192,6 @@ def waitingForPromotion(color,piece,pos_x,pos_y1,pos_y2,pos_y3,pos_y4):
     promotionCheck=False            
     print(pieces_position)
     
-def draw_window_black(starting_position):
-    #fill the background with a different color and update it
-    #WIN.fill(WHITE)
-    if starting_position:
-        board.fill(WHITE)
-        for x in range(0, 8, 2):
-            for y in range(0, 8, 2):
-                pygame.draw.rect(board, GREEN, (x*CELL_SIZE, y*CELL_SIZE, CELL_SIZE, CELL_SIZE))
-                #print(x,y,isGreen)
-                isGreen[x][y]=True
-            #print(isGreen)
-        for x in range(1, 8, 2):
-            for y in range(1, 8, 2):
-                pygame.draw.rect(board, GREEN, (x*CELL_SIZE, y*CELL_SIZE, CELL_SIZE, CELL_SIZE))  
-                isGreen[x][y]=True      
-        #print(isGreen)
-        WIN.blit(board,board.get_rect())
-        
-        #black pieces draw
-        WIN.blit(black_king,(CELL_SIZE*4,CELL_SIZE*7))
-        black_king_piece=pygame.Rect(CELL_SIZE*4,CELL_SIZE*7,CELL_SIZE,CELL_SIZE)
-        WIN.blit(black_queen,(CELL_SIZE*3,CELL_SIZE*7))
-        black_queen_piece=pygame.Rect(CELL_SIZE*3,CELL_SIZE*7,CELL_SIZE,CELL_SIZE)
-        
-        WIN.blit(black_bishop,(CELL_SIZE*2,CELL_SIZE*7))
-        WIN.blit(black_bishop,(CELL_SIZE*5,CELL_SIZE*7))
-        black_bishops_pieces=[]
-        black_bishops_pieces.append(pygame.Rect(CELL_SIZE*2,CELL_SIZE*7,CELL_SIZE,CELL_SIZE))
-        black_bishops_pieces.append(pygame.Rect(CELL_SIZE*5,CELL_SIZE*7,CELL_SIZE,CELL_SIZE))
-        
-        WIN.blit(black_knight,(CELL_SIZE,CELL_SIZE*7))
-        WIN.blit(black_knight,(CELL_SIZE*6,CELL_SIZE*7))
-        black_knights_pieces=[]
-        black_knights_pieces.append(pygame.Rect(CELL_SIZE,CELL_SIZE*7,CELL_SIZE,CELL_SIZE))
-        black_knights_pieces.append(pygame.Rect(CELL_SIZE*6,CELL_SIZE*7,CELL_SIZE,CELL_SIZE))
-        
-        WIN.blit(black_rook,(0,CELL_SIZE*7))
-        WIN.blit(black_rook,(CELL_SIZE*7,CELL_SIZE*7))
-        black_rook_pieces=[]
-        black_rook_pieces.append(pygame.Rect(0,CELL_SIZE*7,CELL_SIZE,CELL_SIZE))
-        black_rook_pieces.append(pygame.Rect(CELL_SIZE*7,CELL_SIZE*7,CELL_SIZE,CELL_SIZE))
-        
-        black_pawns_pieces=[]
-        for i in range(8):
-            WIN.blit(black_pawn,(CELL_SIZE*i,CELL_SIZE*6))
-            black_pawns_pieces.append(pygame.Rect(CELL_SIZE*i,CELL_SIZE,CELL_SIZE,CELL_SIZE))
-            
-        #white pieces draw
-        WIN.blit(white_king,(CELL_SIZE*4,0))
-        white_king_piece=pygame.Rect(CELL_SIZE*4,0,CELL_SIZE,CELL_SIZE)
-        
-        WIN.blit(white_queen,(CELL_SIZE*3,0))
-        white_queen_piece=pygame.Rect(CELL_SIZE*3,0,CELL_SIZE,CELL_SIZE)
-        
-        WIN.blit(white_bishop,(CELL_SIZE*2,0))
-        WIN.blit(white_bishop,(CELL_SIZE*5,0))
-        white_bishop_pieces=[]
-        white_bishop_pieces.append(pygame.Rect(CELL_SIZE*2,0,CELL_SIZE,CELL_SIZE))
-        white_bishop_pieces.append(pygame.Rect(CELL_SIZE*5,0,CELL_SIZE,CELL_SIZE))
-        
-        WIN.blit(white_knight,(CELL_SIZE,0))
-        WIN.blit(white_knight,(CELL_SIZE*6,0))
-        white_knight_pieces=[]
-        white_knight_pieces.append(pygame.Rect(CELL_SIZE,0,CELL_SIZE,CELL_SIZE))
-        white_knight_pieces.append(pygame.Rect(CELL_SIZE*6,0,CELL_SIZE,CELL_SIZE))
-        
-        WIN.blit(white_rook,(0,0))
-        WIN.blit(white_rook,(CELL_SIZE*7,0))
-        white_rook_pieces=[]
-        white_rook_pieces.append(pygame.Rect(0,0,CELL_SIZE,CELL_SIZE))
-        white_rook_pieces.append(pygame.Rect(CELL_SIZE*7,0,CELL_SIZE,CELL_SIZE))
-        
-        white_pawn_pieces=[]
-        for i in range(8):
-            WIN.blit(white_pawn,(CELL_SIZE*i,CELL_SIZE))
-            white_pawn_pieces.append(pygame.Rect(CELL_SIZE*i,CELL_SIZE,CELL_SIZE,CELL_SIZE))
 
 def gameOver(color):
     #draw winning rectangle
@@ -1330,11 +1266,7 @@ def main_white():
 
     global WhiteEnPassantPossible
     global BlackEnPassantPossible
-    
-    # SURREND_WHITE_BUTTON = Button(image=SURREND_RECT, pos=(775, 600), 
-    #                         text_input="Surrend", font=get_font(5), base_color="#d7fcd4", hovering_color=YELLOW)
-    # SURREND_BLACK_BUTTON = Button(image=SURREND_RECT, pos=(775, 600), 
-    #                         text_input="Surrend", font=get_font(5), base_color="#d7fcd4", hovering_color=YELLOW)
+
     #TURNS! white starts ofc
     currentTurn='white'
     #pieces creation
@@ -1414,27 +1346,7 @@ def main_white():
         
     pygame.quit()
     
-def main_black():
-    running = True
-    clock = pygame.time.Clock()
-    #Need to add a menu to choose the color
-    
-    
-    #drawing chessboard first time
-    draw_window_black(starting_position=True)
-    
-    while running:
-        clock.tick(FPS)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                    running = False
-        
-            pygame.display.update()
-        draw_window_black(starting_position=False)
-        
-    pygame.quit()
 
-#TO ADD
 def options():
     while True:
         WIN.blit(BG, (0, 0))
@@ -1510,6 +1422,17 @@ def options():
 
 
 def main_menu():
+    
+    global startingGreen,startingPieces,isGreen,pieces_position,isYellow,lastSelectedNum
+    isGreen=[]
+    isYellow=[]
+    pieces_position=[]
+    for i in range(8):
+        isGreen.append(startingGreen*1)
+        isYellow.append(startingGreen*1)
+        pieces_position.append(startingPieces*1)
+        
+    changeTime(lastSelectedNum)
     while True:
         WIN.blit(BG, (0, 0))
 
@@ -1537,7 +1460,7 @@ def main_menu():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    play_menu()
+                    main_white()
                 if OPTIONS_BUTTON.checkForInput(MENU_MOUSE_POS):
                     options()
                 if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
@@ -1546,48 +1469,49 @@ def main_menu():
 
         pygame.display.update()
 
-def play_menu():
-    while True:
-        WIN.blit(BG, (0, 0))
+# def play_menu():
+#     while True:
+#         WIN.blit(BG, (0, 0))
 
-        PLAY_MOUSE_POS = pygame.mouse.get_pos()
+#         PLAY_MOUSE_POS = pygame.mouse.get_pos()
 
-        PLAY_TEXT = get_font(50).render("PLAY MENU", True, "#b68f40")
-        PLAY_RECT = PLAY_TEXT.get_rect(center=((GRID_SIZE//2)+50, 100))
+#         PLAY_TEXT = get_font(50).render("PLAY MENU", True, "#b68f40")
+#         PLAY_RECT = PLAY_TEXT.get_rect(center=((GRID_SIZE//2)+50, 100))
 
-        PLAY_WHITE_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 250), 
-                            text_input="PLAY WHITE", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
-        PLAY_BLACK_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 400), 
-                            text_input="PLAY BLACK", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
-        QUIT_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 550), 
-                            text_input="RETURN TO MENU", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+#         PLAY_WHITE_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 250), 
+#                             text_input="PLAY WHITE", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+#         PLAY_BLACK_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 400), 
+#                             text_input="PLAY BLACK", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
+#         QUIT_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=((GRID_SIZE//2)+50, 550), 
+#                             text_input="RETURN TO MENU", font=get_font(20), base_color="#d7fcd4", hovering_color=YELLOW)
 
-        WIN.blit(PLAY_TEXT, PLAY_RECT)
+#         WIN.blit(PLAY_TEXT, PLAY_RECT)
 
-        for button in [PLAY_WHITE_BUTTON, PLAY_BLACK_BUTTON, QUIT_BUTTON]:
-            button.changeColor(PLAY_MOUSE_POS)
-            button.update(WIN)
+#         for button in [PLAY_WHITE_BUTTON, PLAY_BLACK_BUTTON, QUIT_BUTTON]:
+#             button.changeColor(PLAY_MOUSE_POS)
+#             button.update(WIN)
         
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if PLAY_WHITE_BUTTON.checkForInput(PLAY_MOUSE_POS):
-                    main_white()
-                if PLAY_BLACK_BUTTON.checkForInput(PLAY_MOUSE_POS):
-                    main_black()
-                if QUIT_BUTTON.checkForInput(PLAY_MOUSE_POS):
-                    main_menu()
+#         for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 pygame.quit()
+#                 sys.exit()
+#             if event.type == pygame.MOUSEBUTTONDOWN:
+#                 if PLAY_WHITE_BUTTON.checkForInput(PLAY_MOUSE_POS):
+#                     main_white()
+#                 if PLAY_BLACK_BUTTON.checkForInput(PLAY_MOUSE_POS):
+#                     main_black()
+#                 if QUIT_BUTTON.checkForInput(PLAY_MOUSE_POS):
+#                     main_menu()
 
-        pygame.display.update()
+#         pygame.display.update()
 
 def changeTime(num):
-    global white_counter,black_counter,white_text,black_text
+    global white_counter,black_counter,white_text,black_text,lastSelectedNum
     white_counter=timers[num]
     black_counter=timers[num]
     white_text=texts[num]
     black_text=texts[num]
+    lastSelectedNum=num
 
 if __name__ == "__main__":
     main_menu()

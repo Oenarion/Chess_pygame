@@ -23,13 +23,10 @@ Add:
   Promotions ✅
 </li>
 <li>
-  Choosable timer ⬜️
+  Timer ✅
 </li>
 <li>
-  Options menu ⬜️
-</li>
-<li>
-  Local multiplayer ⬜️
+  Options menu (Choosable timer and maybe other things) ⬜️
 </li>
 <li>
   Anything else? ⬜️

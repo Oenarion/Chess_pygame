@@ -162,6 +162,13 @@ BlackEnPassantPossible=[False,-1,-1]
 numberPromotedPiece=3
 promotionCheck=False
 
+#timer variables
+white_counter=600
+black_counter=600
+white_text ='10:00'
+black_text='10:00'
+font = pygame.font.SysFont('Consolas', 30)
+
 
 def draw_window_white(starting_position):
     #fill the background with a different color and update it
@@ -522,7 +529,7 @@ def movePieces(piece,pos,currentTurn):
     
     #to redraw everything with modifications
     redrawChessboard()
-    #redrawTimer(font,white_text,black_text)
+    redrawTimer(font,white_text,black_text)
     draw_updatedPieces()
     print(pieces_position)
     return currentTurn
@@ -532,7 +539,7 @@ def changeBoxColor(current_squareX,current_squareY):
     print(current_squareX,current_squareY)
     #If we already have a RED square we have to remove it
     redrawChessboard()
-    #redrawTimer(font,white_text,black_text)
+    redrawTimer(font,white_text,black_text)
     #Add the RED square where mouse cursor is
     pygame.draw.rect(board, RED, (current_squareX*CELL_SIZE, current_squareY*CELL_SIZE, CELL_SIZE, CELL_SIZE))
     #Redraw all pieces because they get removed every time we redraw the chessboard
@@ -1046,7 +1053,7 @@ def promotion(color,piece,pos):
         if 'white' in pieces_position[pos[0]][pos[1]]:
             white_pieces.pop(pieces_position[pos[0]][pos[1]])
         redrawChessboard()
-        #redrawTimer(font,white_text,black_text)
+        redrawTimer(font,white_text,black_text)
         # print(white_pieces,pos[0],pos[1],(pos[1]-1)*CELL_SIZE,(pos[1]-2)*CELL_SIZE)
         #print(black_queen,pos[0]*CELL_SIZE,(pos[1]-1)*CELL_SIZE)
         pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
@@ -1069,7 +1076,7 @@ def promotion(color,piece,pos):
         if 'black' in pieces_position[pos[0]][pos[1]]:
             black_pieces.pop(pieces_position[pos[0]][pos[1]])
         redrawChessboard()
-        #redrawTimer(font,white_text,black_text)
+        redrawTimer(font,white_text,black_text)
         pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
         pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]+2)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
         pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]+3)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
@@ -1298,20 +1305,19 @@ def redrawTimer(font,white_text,black_text):
     WIN.blit(font.render(white_text, True, (0, 0, 0)), (775, 700))
     WIN.blit(font.render(black_text, True, (0, 0, 0)), (775, 35))
 
-
 #variables
 def main_white():
     running = True
     clock = pygame.time.Clock()
     
-    #global white_counter,black_counter,white_text,black_text,font
-    white_counter=600
-    black_counter=600
-    white_text ='10:00'
-    black_text='10:00'
+    global white_counter,black_counter,white_text,black_text,font
+    # white_counter=600
+    # black_counter=600
+    # white_text ='10:00'
+    # black_text='10:00'
     #creates an event every second so that timer gets decreased every time
     pygame.time.set_timer(pygame.USEREVENT, 1000)
-    font = pygame.font.SysFont('Consolas', 30)
+    # font = pygame.font.SysFont('Consolas', 30)
 
     global WhiteEnPassantPossible
     global BlackEnPassantPossible

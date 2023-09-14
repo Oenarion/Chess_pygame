@@ -172,6 +172,15 @@ white_text ='10:00'
 black_text='10:00'
 font = pygame.font.SysFont('Consolas', 30)
 
+#to surrender the game
+SURREND_RECT=pygame.transform.scale(
+            pygame.image.load("chess_bot/assets/Quit Rect.png"),(90,50))
+
+SURREND_WHITE_BUTTON = Button(image=SURREND_RECT, pos=(815, 640), 
+                            text_input="Surrend", font=get_font(10), base_color="#d7fcd4", hovering_color=YELLOW)
+SURREND_BLACK_BUTTON = Button(image=SURREND_RECT, pos=(815, 120), 
+                            text_input="Surrend", font=get_font(10), base_color="#d7fcd4", hovering_color=YELLOW)
+
 
 def draw_window_white(starting_position):
     #fill the background with a different color and update it
@@ -532,7 +541,7 @@ def movePieces(piece,pos,currentTurn):
     
     #to redraw everything with modifications
     redrawChessboard()
-    redrawTimer(font,white_text,black_text)
+    redrawTimer(font,white_text,black_text,SURREND_WHITE_BUTTON,SURREND_BLACK_BUTTON)
     draw_updatedPieces()
     print(pieces_position)
     return currentTurn
@@ -542,7 +551,7 @@ def changeBoxColor(current_squareX,current_squareY):
     print(current_squareX,current_squareY)
     #If we already have a RED square we have to remove it
     redrawChessboard()
-    redrawTimer(font,white_text,black_text)
+    redrawTimer(font,white_text,black_text,SURREND_WHITE_BUTTON,SURREND_BLACK_BUTTON)
     #Add the RED square where mouse cursor is
     pygame.draw.rect(board, RED, (current_squareX*CELL_SIZE, current_squareY*CELL_SIZE, CELL_SIZE, CELL_SIZE))
     #Redraw all pieces because they get removed every time we redraw the chessboard
@@ -1056,7 +1065,7 @@ def promotion(color,piece,pos):
         if 'white' in pieces_position[pos[0]][pos[1]]:
             white_pieces.pop(pieces_position[pos[0]][pos[1]])
         redrawChessboard()
-        redrawTimer(font,white_text,black_text)
+        redrawTimer(font,white_text,black_text,SURREND_WHITE_BUTTON,SURREND_BLACK_BUTTON)
         # print(white_pieces,pos[0],pos[1],(pos[1]-1)*CELL_SIZE,(pos[1]-2)*CELL_SIZE)
         #print(black_queen,pos[0]*CELL_SIZE,(pos[1]-1)*CELL_SIZE)
         pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
@@ -1079,7 +1088,7 @@ def promotion(color,piece,pos):
         if 'black' in pieces_position[pos[0]][pos[1]]:
             black_pieces.pop(pieces_position[pos[0]][pos[1]])
         redrawChessboard()
-        redrawTimer(font,white_text,black_text)
+        redrawTimer(font,white_text,black_text,SURREND_WHITE_BUTTON,SURREND_BLACK_BUTTON)
         pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
         pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]+2)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
         pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]+3)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
@@ -1300,25 +1309,32 @@ def gameOver(color):
 
         pygame.display.update()
 
-def redrawTimer(font,white_text,black_text):
+def redrawTimer(font,white_text,black_text,white_surrend,black_surrend):
     pygame.draw.rect(board,(0,0,0),(CELL_SIZE*8,0,10,CELL_SIZE*8))
     pygame.draw.rect(board,'#DE3163',(CELL_SIZE*8+10,0,90,CELL_SIZE*8))
-    pygame.draw.rect(board,'#5D3FD3',(CELL_SIZE*8+10,CELL_SIZE,90,CELL_SIZE*6))
+    pygame.draw.rect(board,	'#702963',(CELL_SIZE*8+10,CELL_SIZE,90,CELL_SIZE*6))
     WIN.blit(board,board.get_rect())
     WIN.blit(font.render(white_text, True, (0, 0, 0)), (775, 700))
     WIN.blit(font.render(black_text, True, (0, 0, 0)), (775, 35))
+    white_surrend.update(WIN)
+    black_surrend.update(WIN)
 
 #variables
 def main_white():
     running = True
     clock = pygame.time.Clock()
     
-    global white_counter,black_counter,white_text,black_text,font
+    global white_counter,black_counter,white_text,black_text,font,SURREND_WHITE_BUTTON,SURREND_BLACK_BUTTON
     #creates an event every second so that timer gets decreased every time
     pygame.time.set_timer(pygame.USEREVENT, 1000)
 
     global WhiteEnPassantPossible
     global BlackEnPassantPossible
+    
+    # SURREND_WHITE_BUTTON = Button(image=SURREND_RECT, pos=(775, 600), 
+    #                         text_input="Surrend", font=get_font(5), base_color="#d7fcd4", hovering_color=YELLOW)
+    # SURREND_BLACK_BUTTON = Button(image=SURREND_RECT, pos=(775, 600), 
+    #                         text_input="Surrend", font=get_font(5), base_color="#d7fcd4", hovering_color=YELLOW)
     #TURNS! white starts ofc
     currentTurn='white'
     #pieces creation
@@ -1362,7 +1378,7 @@ def main_white():
                     else:
                         black_text = (str(numOfMinutes)+':'+str(numOfSeconds)) if black_counter > 0 else gameOver('white')
                 
-            redrawTimer(font,white_text,black_text)
+            redrawTimer(font,white_text,black_text,SURREND_WHITE_BUTTON,SURREND_BLACK_BUTTON)
             #DECLARE VICTORY OF ONE SIDE!                
             if 'black_king' not in black_pieces:
                 gameOver('white')
@@ -1379,6 +1395,10 @@ def main_white():
                 current_x,current_y=pygame.mouse.get_pos()
                 current_squareX=current_x//CELL_SIZE
                 current_squareY=current_y//CELL_SIZE
+                if SURREND_WHITE_BUTTON.checkForInput((current_x,current_y)):
+                    gameOver('black')
+                if SURREND_BLACK_BUTTON.checkForInput((current_x,current_y)):
+                    gameOver('white')
                 if current_squareX<8:
                     if isYellow[current_squareX][current_squareY]==True:
                         currentTurn=movePieces(current_piece,(current_squareX,current_squareY),currentTurn)

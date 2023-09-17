@@ -411,8 +411,18 @@ def movePieces(piece,pos,currentTurn):
     global capture_sound,move_sound
     
     capture=False
-    
-    print(white_pieces,black_pieces)
+    #if rook gets eaten we can't castle of course
+    if "white_rook_0" not in white_pieces:
+        whiteRookMoved0=True
+    if "white_rook_1" not in white_pieces:
+        whiteRookMoved1=True
+    if "black_rook_0" not in black_pieces:
+        blackRookMoved0=True
+    if "black_rook_1" not in black_pieces:
+        blackRookMoved1=True
+            
+    print(blackRookMoved0,blackRookMoved1,whiteRookMoved0,whiteRookMoved1)
+    #print(white_pieces,black_pieces)
     #CHECK for en-passant as first thing
     
     if  BlackEnPassantPossible[0] and 'black_pawn' in piece and pos[0]==BlackEnPassantPossible[1] and pos[1]==BlackEnPassantPossible[-1]+1:
@@ -876,7 +886,7 @@ def check_bishop(color,current_x,current_y):
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y-counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
                 isYellow[i][current_y-counter]=True
             #if we find a white piece we have to stop there as possible moves    
-            elif current_y-counter>=0 and 'white' in pieces_position[i][current_y]:
+            elif current_y-counter>=0 and 'white' in pieces_position[i][current_y-counter]:
                 pygame.draw.circle(board, YELLOW, ((i)*CELL_SIZE+CELL_SIZE//2, (current_y-counter)*CELL_SIZE+CELL_SIZE//2), CELL_SIZE//3, 3*CELL_SIZE//2)
                 isYellow[i][current_y-counter]=True
                 break
@@ -1055,21 +1065,21 @@ def check_king(color,current_x,current_y):
 #ADD CONSTRAINT THAT WE CAN'T CASTLE IF UNDER ATTACK ON THAT CELL
 def short_castle(color):
     if color=='black':
-        if blackKingMoved==False and blackRookMoved1==False and pieces_position[5][0]=='' and pieces_position[6][0]=='':
+        if blackKingMoved==False and blackRookMoved1==False and pieces_position[5][0]=='' and pieces_position[6][0]=='' and pieces_position[7][0]=='black_rook_1':
             isYellow[7][0]=True
             return True   
     else:
-        if whiteKingMoved==False and whiteRookMoved1==False and pieces_position[5][7]=='' and pieces_position[6][7]=='':
+        if whiteKingMoved==False and whiteRookMoved1==False and pieces_position[5][7]=='' and pieces_position[6][7]=='' and pieces_position[7][0]=='white_rook_1':
             isYellow[7][7]=True
             return True
 
 def long_castle(color):
     if color=='black':
-        if blackKingMoved==False and blackRookMoved0==False and pieces_position[1][0]=='' and pieces_position[2][0]=='' and pieces_position[3][0]=='':
+        if blackKingMoved==False and blackRookMoved0==False and pieces_position[1][0]=='' and pieces_position[2][0]=='' and pieces_position[3][0]=='' and pieces_position[0][0]=='black_rook_0':
             isYellow[0][0]=True
             return True
     else:
-        if whiteKingMoved==False and whiteRookMoved0==False and pieces_position[1][7]=='' and pieces_position[2][7]=='' and pieces_position[3][7]=='':
+        if whiteKingMoved==False and whiteRookMoved0==False and pieces_position[1][7]=='' and pieces_position[2][7]=='' and pieces_position[3][7]=='' and pieces_position[0][7]=='white_rook_0':
             isYellow[0][7]=True
             return True
     
@@ -1226,7 +1236,59 @@ def waitingForPromotion(color,piece,pos_x,pos_y1,pos_y2,pos_y3,pos_y4):
     promotionCheck=False            
     print(pieces_position)
     
+def draw():
+    if len(black_pieces)==1 and len(white_pieces)==1:
+        return True
+  
+def confirmedDraw():
+    #delete positions in the winning screen
+    for i in range(2,6):
+        for j in range(3,5):
+            pieces_position[i][j]=''
+            
+    #redraw pieces that are not in the winning rectangle
+    for key in black_pieces:
+        ignoreNums=key.split('_')
+        newKey=ignoreNums[0]+'_'+ignoreNums[1]
+        if black_pieces[key].x//CELL_SIZE>=2 and black_pieces[key].x//CELL_SIZE<=5 and black_pieces[key].y//CELL_SIZE>=3 and black_pieces[key].y//CELL_SIZE<=4:
+            continue
+        else:    
+            WIN.blit(BLACK_PIECES_IMGS[newKey],(black_pieces[key].x,black_pieces[key].y))
 
+    for key in white_pieces:
+        ignoreNums=key.split('_')
+        newKey=ignoreNums[0]+'_'+ignoreNums[1]
+        if white_pieces[key].x//CELL_SIZE>=2 and white_pieces[key].x//CELL_SIZE<=5 and white_pieces[key].y//CELL_SIZE>=3 and white_pieces[key].y//CELL_SIZE<=4:
+            continue
+        else:    
+            WIN.blit(WHITE_PIECES_IMGS[newKey],(white_pieces[key].x,white_pieces[key].y))
+
+    # PLAY_WHITE_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=(GRID_SIZE//2, 250), 
+    #                         text_input=color.capitalize()+" WON!", font=get_font(20), base_color="#d7fcd4", hovering_color="White")
+    while True:
+        MENU_TEXT = get_font(50).render("DRAW!", True, "#000080")
+        MENU_RECT = MENU_TEXT.get_rect(center=(GRID_SIZE//2, 300))
+        MENU_MOUSE_POS = pygame.mouse.get_pos()
+        
+        QUIT_BUTTON = Button(image=pygame.image.load("chess_bot/assets/Play Rect.png"), pos=(GRID_SIZE//2, 400), 
+                                text_input="MAIN MENU", font=get_font(20), base_color="#d7fcd4", hovering_color="White")
+        
+        WIN.blit(MENU_TEXT,MENU_RECT)
+        
+        for button in [QUIT_BUTTON]:
+            button.changeColor(MENU_MOUSE_POS)
+            button.update(WIN)
+            
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    main_menu()
+
+        pygame.display.update()   
+          
 def gameOver(color):
     #draw winning rectangle
     #pygame.draw.rect(board,YELLOW,(2*CELL_SIZE,3*CELL_SIZE,4*CELL_SIZE,2*CELL_SIZE))
@@ -1318,6 +1380,10 @@ def main_white():
         for event in pygame.event.get():
 
             #Timer!
+            if draw():
+               confirmedDraw()
+               winning_sound.play()
+                
             if event.type == pygame.USEREVENT and currentTurn=='white': 
                 white_counter -= 1
                 numOfMinutes=white_counter//60

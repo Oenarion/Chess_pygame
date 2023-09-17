@@ -33,6 +33,7 @@ BG = pygame.transform.scale(
     pygame.image.load("chess_bot/assets/Background.png"),(GRID_SIZE+100,GRID_SIZE))
 WIN = pygame.display.set_mode(size=(GRID_SIZE+100,GRID_SIZE))
 
+
 WHITE=(255,255,255)
 GREEN=(118,150,86)
 RED=(136,8,8)
@@ -186,6 +187,13 @@ SURREND_WHITE_BUTTON = Button(image=SURREND_RECT, pos=(815, 640),
 SURREND_BLACK_BUTTON = Button(image=SURREND_RECT, pos=(815, 120), 
                             text_input="Surrend", font=get_font(10), base_color="#d7fcd4", hovering_color=YELLOW)
 
+
+#sound effects
+background_music=pygame.mixer.Sound('chess_bot/sound_effects/background_music.mp3')
+button_sound=pygame.mixer.Sound("chess_bot/sound_effects/button_click.mp3")
+capture_sound=pygame.mixer.Sound("chess_bot/sound_effects/capture.mp3")
+move_sound=pygame.mixer.Sound("chess_bot/sound_effects/move-self.mp3")
+winning_sound=pygame.mixer.Sound("chess_bot/sound_effects/winning_sound.mp3")
 
 
 def draw_window_white(starting_position):
@@ -400,6 +408,9 @@ def movePieces(piece,pos,currentTurn):
     global blackKingMoved
     global blackRookMoved0
     global blackRookMoved1
+    global capture_sound,move_sound
+    
+    capture=False
     
     print(white_pieces,black_pieces)
     #CHECK for en-passant as first thing
@@ -413,6 +424,7 @@ def movePieces(piece,pos,currentTurn):
         black_pieces[piece].x=pos[0]*CELL_SIZE
         black_pieces[piece].y=pos[1]*CELL_SIZE
         pieces_position[pos[0]][pos[1]]=piece
+        capture_sound.play()
 
     elif WhiteEnPassantPossible[0] and 'white_pawn' in piece and pos[0]==WhiteEnPassantPossible[1] and pos[1]==WhiteEnPassantPossible[-1]-1:
         current_piece=pieces_position[WhiteEnPassantPossible[1]][pos[1]+1]
@@ -423,6 +435,7 @@ def movePieces(piece,pos,currentTurn):
         white_pieces[piece].x=pos[0]*CELL_SIZE
         white_pieces[piece].y=pos[1]*CELL_SIZE
         pieces_position[pos[0]][pos[1]]=piece 
+        capture_sound.play()
         
     WhiteEnPassantPossible=[False,-1,-1]
     BlackEnPassantPossible=[False,-1,-1]
@@ -454,6 +467,7 @@ def movePieces(piece,pos,currentTurn):
                 pieces_position[4][0]=''
                 pieces_position[2][0]=piece
                 pieces_position[3][0]='black_rook_0'
+                move_sound.play()
                 
                 #To ensure castle can't be used again
                 blackRookMoved0=True
@@ -469,6 +483,7 @@ def movePieces(piece,pos,currentTurn):
                 pieces_position[7][0]=''
                 pieces_position[6][0]=piece
                 pieces_position[5][0]='black_rook_1'
+                move_sound.play()
                 
                 #To ensure castle can't be used again
                 blackRookMoved0=True
@@ -491,6 +506,10 @@ def movePieces(piece,pos,currentTurn):
             #NEED TO REDRAW EACH PIECE IN NEW POSITION!!
             if 'white' in current_piece:
                 white_pieces.pop(current_piece)
+                capture_sound.play()
+                capture=True
+            if not capture:
+                move_sound.play()
             pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
             black_pieces[piece].x=pos[0]*CELL_SIZE
             black_pieces[piece].y=pos[1]*CELL_SIZE
@@ -512,6 +531,7 @@ def movePieces(piece,pos,currentTurn):
                 pieces_position[4][7]=''
                 pieces_position[2][7]=piece
                 pieces_position[3][7]='white_rook_0'
+                move_sound.play()
                 
                 #To ensure castle can't be used again
                 whiteRookMoved0=True
@@ -527,6 +547,7 @@ def movePieces(piece,pos,currentTurn):
                 pieces_position[7][7]=''
                 pieces_position[6][7]=piece
                 pieces_position[5][7]='white_rook_1'
+                move_sound.play()
                 
                 #To ensure castle can't be used again
                 whiteRookMoved0=True
@@ -546,6 +567,10 @@ def movePieces(piece,pos,currentTurn):
                 print(BlackEnPassantPossible)
             if 'black' in current_piece:
                 black_pieces.pop(current_piece)
+                capture_sound.play()
+                capture=True
+            if not capture:
+                move_sound.play()
             pieces_position[white_pieces[piece].x//CELL_SIZE][white_pieces[piece].y//CELL_SIZE]=''
             white_pieces[piece].x=pos[0]*CELL_SIZE
             white_pieces[piece].y=pos[1]*CELL_SIZE
@@ -1067,8 +1092,8 @@ def en_passant(color,current_x,current_y):
                 isYellow[current_x+1][current_y-1]=True
     
 def promotion(color,piece,pos):
-    global promotionCheck
-    print("SUSSUS AMOGUS ARMONIGAS SASASAS")    
+    global promotionCheck,capture_sound,move_sound
+    capture=False
     if color=='black':
         pieces_position[black_pieces[piece].x//CELL_SIZE][black_pieces[piece].y//CELL_SIZE]=''
         black_pieces[piece].x=pos[0]*CELL_SIZE
@@ -1076,6 +1101,10 @@ def promotion(color,piece,pos):
         #print(pieces_position[pos[0]][pos[1]])
         if 'white' in pieces_position[pos[0]][pos[1]]:
             white_pieces.pop(pieces_position[pos[0]][pos[1]])
+            capture_sound.play()
+            capture=True
+        if not capture:
+            move_sound.play()
         redrawChessboard()
         redrawTimer(font,white_text,black_text,SURREND_WHITE_BUTTON,SURREND_BLACK_BUTTON)
         # print(white_pieces,pos[0],pos[1],(pos[1]-1)*CELL_SIZE,(pos[1]-2)*CELL_SIZE)
@@ -1093,12 +1122,17 @@ def promotion(color,piece,pos):
         redrawChessboard()
         #redrawTimer(font,white_text,black_text)
         draw_updatedPieces()
+        
     else:
         pieces_position[white_pieces[piece].x//CELL_SIZE][white_pieces[piece].y//CELL_SIZE]=''
         white_pieces[piece].x=pos[0]*CELL_SIZE
         white_pieces[piece].y=pos[1]*CELL_SIZE
         if 'black' in pieces_position[pos[0]][pos[1]]:
             black_pieces.pop(pieces_position[pos[0]][pos[1]])
+            capture_sound.play()
+            capture=True
+        if not capture:
+            move_sound.play()
         redrawChessboard()
         redrawTimer(font,white_text,black_text,SURREND_WHITE_BUTTON,SURREND_BLACK_BUTTON)
         pygame.draw.rect(board, GREY, (pos[0]*CELL_SIZE,(pos[1]+1)*CELL_SIZE, CELL_SIZE, CELL_SIZE))
@@ -1261,6 +1295,10 @@ def main_white():
     clock = pygame.time.Clock()
     
     global white_counter,black_counter,white_text,black_text,font,SURREND_WHITE_BUTTON,SURREND_BLACK_BUTTON
+    global background_music,winning_sound
+    
+    
+    background_music.stop()
     #creates an event every second so that timer gets decreased every time
     pygame.time.set_timer(pygame.USEREVENT, 1000)
 
@@ -1313,8 +1351,10 @@ def main_white():
             redrawTimer(font,white_text,black_text,SURREND_WHITE_BUTTON,SURREND_BLACK_BUTTON)
             #DECLARE VICTORY OF ONE SIDE!                
             if 'black_king' not in black_pieces:
+                winning_sound.play()
                 gameOver('white')
             if 'white_king' not in white_pieces:
+                winning_sound.play()
                 gameOver('black')
                 
             #close game
@@ -1328,8 +1368,10 @@ def main_white():
                 current_squareX=current_x//CELL_SIZE
                 current_squareY=current_y//CELL_SIZE
                 if SURREND_WHITE_BUTTON.checkForInput((current_x,current_y)):
+                    winning_sound.play()
                     gameOver('black')
                 if SURREND_BLACK_BUTTON.checkForInput((current_x,current_y)):
+                    winning_sound.play()
                     gameOver('white')
                 if current_squareX<8:
                     if isYellow[current_squareX][current_squareY]==True:
@@ -1348,6 +1390,7 @@ def main_white():
     
 
 def options():
+    global button_sound
     while True:
         WIN.blit(BG, (0, 0))
 
@@ -1390,23 +1433,30 @@ def options():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if TIME1_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    button_sound.play()
                     changeTime(0)
                     
                     # CURRENT_BUTTON_TO_CHANGE=TIME1_BUTTON
                     # print(TIME1_BUTTON.base_color)
                     # changeFlag=True
                 if TIME2_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    button_sound.play()
                     changeTime(1)
                 if TIME3_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    button_sound.play()
                     changeTime(2)     
                 if TIME4_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    button_sound.play()
                     changeTime(3)
                 if TIME5_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    button_sound.play()
                     changeTime(4)
                 if TIME6_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    button_sound.play()
                     changeTime(5)
                     
                 if QUIT_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
+                    button_sound.play()
                     main_menu()
                     
         # if changeFlag:     
@@ -1423,7 +1473,14 @@ def options():
 
 def main_menu():
     
-    global startingGreen,startingPieces,isGreen,pieces_position,isYellow,lastSelectedNum
+    global startingGreen,startingPieces,isGreen,pieces_position,isYellow,lastSelectedNum,background_music,button_sound
+
+    global black_pieces,white_pieces
+    #music
+    if background_music.get_num_channels()==0:
+        background_music.play(-1)   
+        
+        
     isGreen=[]
     isYellow=[]
     pieces_position=[]
@@ -1431,7 +1488,8 @@ def main_menu():
         isGreen.append(startingGreen*1)
         isYellow.append(startingGreen*1)
         pieces_position.append(startingPieces*1)
-        
+    black_pieces={}
+    white_pieces={}
     changeTime(lastSelectedNum)
     while True:
         WIN.blit(BG, (0, 0))
@@ -1460,10 +1518,13 @@ def main_menu():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    button_sound.play()
                     main_white()
                 if OPTIONS_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    button_sound.play()
                     options()
                 if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    button_sound.play()
                     pygame.quit()
                     sys.exit()
 

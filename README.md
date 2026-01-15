@@ -9,37 +9,10 @@ In this version of chess a player wins when he eats the enemy king, so checkmate
 Also for this reason castle can be done whatever the player likes it (of course if the cells between king and rook are free and both pieces has never moved), meaning that if the cell in which the king will end after castle is under attack you can still perform the movement at your own risk.
 
 # TO DO
-Add:
-<li>
-  Main movement of pieces ✅
-</li>
-<li>
-  Turns ✅
-</li>
-<li>
-  Eating pieces of opponent ✅ 
-</li>
-<li>
-  Castle ✅
-</li>
-<li>
-  En-passant ✅
-</li>
-<li>
-  Promotions ✅
-</li>
-<li>
-  Timer ✅
-</li>
-<li>
-  Options menu (Choosable timer and maybe other things) ✅
-</li>
-<li>
-  Sound effects ✅
-</li>
-<li>
-  Naive draw ✅
-</li>
-<li>
-  Anything else? ⬜️
-</li>
+- [ ] FIRST OF ALL DIVIDE AND CONQUER! IT'S ALL IN THE SAME SHITTY FILE.
+- [ ] CREATE A CHESS PIECE CLASS AND ALL THE SUBCLASSES TO TAKE CARE OF PIECE MOVEMENTS
+- [ ] IMPLEMENT BASIC CHESS GAMEPLAY LOOP
+- [ ] IMPLEMENTS CHECKS AND CHECKMATES
+- [ ] CREATE DIFFERENT SIZES TO PLAY WITH (maybe yaml file to get the configuration?)
+- [ ] IMPLEMENT CHESS AI TO PLAY AGAINST (ALSO CAN CHOOSE IF YOU WANT TO PLAY WHITE OR BLACK)
+- [ ] IMPLEMENT A SERVER TO PLAY AGAINST FRIENDS ONLINE

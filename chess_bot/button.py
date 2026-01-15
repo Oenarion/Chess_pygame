@@ -5,6 +5,7 @@ class Button():
 		self.y_pos = pos[1]
 		self.font = font
 		self.base_color, self.hovering_color = base_color, hovering_color
+		self.copyOfBaseColor=base_color
 		self.text_input = text_input
 		self.text = self.font.render(self.text_input, True, self.base_color)
 		if self.image is None:
@@ -16,6 +17,15 @@ class Button():
 		if self.image is not None:
 			screen.blit(self.image, self.rect)
 		screen.blit(self.text, self.text_rect)
+  
+	def update_color(self):
+		if self.base_color!=self.hovering_color:
+			print("changing color!")
+			self.base_color=self.hovering_color
+		else:
+			self.base_color=self.copyOfBaseColor
+		print(self.base_color,self.hovering_color)
+		self.text=self.font.render(self.text_input,True,self.base_color)
 
 	def checkForInput(self, position):
 		if position[0] in range(self.rect.left, self.rect.right) and position[1] in range(self.rect.top, self.rect.bottom):
@@ -28,7 +38,4 @@ class Button():
 		else:
 			self.text = self.font.render(self.text_input, True, self.base_color)
    
-	def changeColorPermanently(self,color):
-		self.base_color = color
-		self.text = self.font.render(self.text_input, True, self.base_color)
 		

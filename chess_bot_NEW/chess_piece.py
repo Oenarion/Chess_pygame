@@ -22,43 +22,46 @@ class SpriteSheet:
         return sprite
 
 class ChessPiece:
-    def __init__(self, name, sprite, position):
+    def __init__(self, name, sprite):
         self.name = name
         self.sprite = sprite
-        self.position = position  # (row, col)
         
-    def draw(self, screen, tile_size, border):
-        row, col = self.position
+        
+    def draw(self, screen, tile_size, border, position):
+        row, col = position
         x = col * tile_size
         y = row * tile_size + border
         screen.blit(self.sprite, (x, y))
 
 class Pawn(ChessPiece):
-    def __init__(self, spritesheet, position, scale, is_white=0):
+    def __init__(self, spritesheet, scale, is_white=0):
         sprite = spritesheet.get_sprite(0+32*is_white, 0, 32, 32, scale)
-        super().__init__("pawn", sprite, position)
+        super().__init__("pawn", sprite)
+        
+    def move():
+        ...
         
 class Rook(ChessPiece):
-    def __init__(self, spritesheet, position, scale, is_white=0):
+    def __init__(self, spritesheet, scale, is_white=0):
         sprite = spritesheet.get_sprite(0+32*is_white, 32, 32, 32, scale)
-        super().__init__("rook", sprite, position)
+        super().__init__("rook", sprite)
         
 class Bishop(ChessPiece):
-    def __init__(self, spritesheet, position, scale, is_white=0):
+    def __init__(self, spritesheet, scale, is_white=0):
         sprite = spritesheet.get_sprite(0+32*is_white, 64, 32, 32, scale)
-        super().__init__("bishop", sprite, position)
+        super().__init__("bishop", sprite)
         
 class Knight(ChessPiece):
-    def __init__(self, spritesheet, position, scale, is_white=0):
+    def __init__(self, spritesheet, scale, is_white=0):
         sprite = spritesheet.get_sprite(0+32*is_white, 96, 32, 32, scale)
-        super().__init__("knight", sprite, position)
+        super().__init__("knight", sprite)
         
 class Queen(ChessPiece):
-    def __init__(self, spritesheet, position, scale, is_white=0):
+    def __init__(self, spritesheet, scale, is_white=0):
         sprite = spritesheet.get_sprite(0+32*is_white, 128, 32, 32, scale)
-        super().__init__("queen", sprite, position)
+        super().__init__("queen", sprite)
         
 class King(ChessPiece):
-    def __init__(self, spritesheet, position, scale, is_white=0):
+    def __init__(self, spritesheet, scale, is_white=0):
         sprite = spritesheet.get_sprite(0+32*is_white, 160, 32, 32, scale)
-        super().__init__("king", sprite, position)
+        super().__init__("king", sprite)

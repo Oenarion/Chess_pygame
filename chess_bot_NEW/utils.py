@@ -1,0 +1,42 @@
+class GameController:
+    def __init__(self, game_grid):
+        self.game_grid = game_grid
+        self.legal_moves = None
+        self.piece_selected = None
+        self.piece_selected_position = None
+        self.is_white_turn = True
+
+    def handle_click(self, row, col):
+        if self.legal_moves:
+            if [row, col] in self.legal_moves:
+                self.game_grid.move_piece(
+                    self.piece_selected,
+                    self.piece_selected_position,
+                    [row, col]
+                )
+
+                self.is_white_turn = not self.is_white_turn
+                self.clear_selection()
+
+            elif self.game_grid.is_empty(row, col):
+                self.clear_selection()
+
+            elif self.is_white_turn == self.game_grid.grid[row][col].is_white:
+                self.select_piece(row, col)
+
+        else:
+            if (not self.game_grid.is_empty(row, col) and
+                self.is_white_turn == self.game_grid.grid[row][col].is_white):
+                self.select_piece(row, col)
+
+    def clear_selection(self):
+        self.legal_moves = None
+        self.piece_selected = None
+        self.piece_selected_position = None
+
+    def select_piece(self, row, col):
+        self.piece_selected = self.game_grid.grid[row][col]
+        self.piece_selected_position = [row, col]
+        self.legal_moves = self.piece_selected.get_legal_moves(
+            [row, col], self.game_grid
+        )

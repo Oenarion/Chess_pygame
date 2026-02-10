@@ -1,11 +1,5 @@
 import pygame
-
-possible_moves = {
-    'up': (-1, 0),
-    'down': (1, 0),
-    'left': (0, -1),   
-    'right': (0, 1),
-}
+import utils
 
 class Grid():
     def __init__(self, rows, cols, tile_size, border):
@@ -42,6 +36,18 @@ class Grid():
         self.grid[-1][7] = white_pieces["rook"][1] if is_player_white else black_pieces["rook"][1]
         for i in range(8):
             self.grid[-2][i] = white_pieces["pawn"][i] if is_player_white else black_pieces["pawn"][i]
+        
+    def get_all_pieces(self, color):
+        """
+        Get all pieces of a certain color.
+        """
+        pieces = []
+        for row in range(len(self.grid)):
+            for col in range(len(self.grid[0])):
+                if self.grid[row][col] != 0 and self.grid[row][col].is_white == color:
+                    pieces.append([self.grid[row][col], [row, col]])
+        
+        return pieces
         
     def draw(self, screen, color, legal_moves):
         self.draw_chessboard(screen, color)
@@ -95,6 +101,12 @@ class Grid():
         if isinstance(piece, Pawn):
             piece.first_move = False
             
+        if isinstance(piece, Rook):
+            piece.castle = False
+            
+        if isinstance(piece, King):
+            piece.castle = False
+            
         self.last_move = {
             "piece": piece,
             "from": from_pos,
@@ -119,7 +131,50 @@ class Grid():
                 return (pos[0]+direction,lm["to"][1]) 
                 
         return (-1, -1)
+    
+    def is_square_attacked(self, square, pieces):
+        for piece, pos in pieces:
+            moves = piece.get_legal_moves(pos, self)
+            
+            if square in moves:
+                return True
+        return False
 
+    def can_short_castle(self, original_position, enemy_color):
+        # player is playing white
+        enemy_pieces = self.get_all_pieces(enemy_color)
+        if original_position == [7, 4]:
+            king = self.grid[7][4]
+            rook = self.grid[7][7]
+            
+            # check conditions if castle is not legal
+            if not isinstance(king, King) and not isinstance(rook, Rook):
+                return False
+            if not king.castle or not rook.castle:
+                return False
+            if not self.is_empty(7, 5) and not self.is_empty(7, 6):
+                return False
+            if self.is_square_attacked([7, 5], enemy_pieces) or self.is_square_attacked([7, 6], enemy_pieces):
+                return False
+            else:
+                return True
+        # player is playing black or_pos is [7,3]
+        else:
+            king = self.grid[7][3]
+            rook = self.grid[7][0]
+            
+            if not isinstance(king, King) and not isinstance(rook, Rook):
+                return False
+            if not king.castle or not rook.castle:
+                return False
+            if not self.is_empty(7, 1) and not self.is_empty(7, 2):
+                return False
+            if self.is_square_attacked([7, 1], enemy_pieces) or self.is_square_attacked([7, 2], enemy_pieces):
+                return False
+            else:
+                return True
+            
+            
 
 class SpriteSheet:
     def __init__(self, filename):
@@ -169,9 +224,9 @@ class Pawn(ChessPiece):
         if self.first_move:
             if grid.is_empty(row+(direction*2), col) and row+(direction*2) >= 0:
                 moves.append([row+(direction*2), col])
-        if grid.is_enemy(row + direction, col + 1, self.is_white):
+        if col + 1 < 8 and grid.is_enemy(row + direction, col + 1, self.is_white):
             moves.append([row + direction, col + 1])
-        if grid.is_enemy(row + direction, col - 1, self.is_white):
+        if col - 1 >= 0 and grid.is_enemy(row + direction, col - 1, self.is_white):
             moves.append([row + direction, col - 1])
         
         en_passant = grid.can_en_passant(position, direction)
@@ -186,6 +241,16 @@ class Rook(ChessPiece):
         sprite = spritesheet.get_sprite(0+32*is_white, 32, 32, 32, scale)
         self.is_white = is_white
         super().__init__("rook", sprite)
+        self.castle = True       
+        
+    def get_legal_moves(self, position, grid: Grid):
+        directions = [
+        (-1, 0),
+        (1, 0),
+        (0, -1),
+        (0, 1)
+        ]
+        return utils.sliding_moves(self, position, grid, directions)
         
 class Bishop(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
@@ -193,20 +258,85 @@ class Bishop(ChessPiece):
         self.is_white = is_white
         super().__init__("bishop", sprite)
         
+        
+    def get_legal_moves(self, position, grid: Grid):
+        directions = [
+        (-1, -1),
+        (1, -1),
+        (-1, 1),
+        (1, 1)
+        ]
+        return utils.sliding_moves(self, position, grid, directions)
+    
 class Knight(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
         sprite = spritesheet.get_sprite(0+32*is_white, 96, 32, 32, scale)
         self.is_white = is_white
         super().__init__("knight", sprite)
         
+    def get_knight_moves(self, position, grid: Grid, directions):
+        row, col = position
+        dr, dc = directions
+        r = row + dr
+        c = col + dc
+        
+        if 0 <= r < 8 and 0 <= c < 8 and (grid.is_empty(r,c) or grid.is_enemy(r,c, self.is_white)):
+            return [r,c]
+                
+    def get_legal_moves(self, position, grid: Grid):
+        moves = []
+        all_directions = [
+            (-1, -2), (-1, 2), (1, -2), (1, 2),
+            (-2, -1), (-2, 1), (2, -1), (2, 1)
+        ]
+        # possible cases: (-1,-2), (-1,2), (1,-2), (1,2), (-2,-1), (-2,1), (2,-1), (2,1)
+        # yes this will be just a long list of ifs...
+        for directions in all_directions:
+            curr_move = self.get_knight_moves(position, grid, directions)
+            if curr_move:
+                moves.append(curr_move)
+        return moves
+            
 class Queen(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
         sprite = spritesheet.get_sprite(0+32*is_white, 128, 32, 32, scale)
         self.is_white = is_white
         super().__init__("queen", sprite)
         
+    def get_legal_moves(self, position, grid: Grid):
+        
+        directions = [
+        (-1, 0), (1, 0), (0, -1), (0, 1),
+        (-1, -1), (1, -1), (-1, 1), (1, 1)
+        ]
+        return utils.sliding_moves(self, position, grid, directions)
+    
 class King(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
         sprite = spritesheet.get_sprite(0+32*is_white, 160, 32, 32, scale)
         self.is_white = is_white
         super().__init__("king", sprite)
+        self.castle = True
+        
+    def get_king_moves(self, position, grid:Grid, directions):
+        row, col = position
+        dr, dc = directions
+        r = row + dr
+        c = col + dc
+        
+        if 0 <= r < 8 and 0 <= c < 8 and (grid.is_empty(r,c) or grid.is_enemy(r,c, self.is_white)):
+            return [r,c]
+        
+        
+    def get_legal_moves(self, position, grid: Grid):
+        moves = []
+        all_directions = [
+            (-1, 0), (-1, -1), (0, -1), (1, -1),
+            (1, 0), (1, 1), (0, 1), (-1, 1)
+        ]
+        for directions in all_directions:
+            curr_move = self.get_king_moves(position, grid, directions)
+            if curr_move:
+                moves.append(curr_move)
+        
+        return moves

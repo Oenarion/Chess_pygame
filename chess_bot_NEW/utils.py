@@ -28,6 +28,7 @@ class GameController:
             if (not self.game_grid.is_empty(row, col) and
                 self.is_white_turn == self.game_grid.grid[row][col].is_white):
                 self.select_piece(row, col)
+                
 
     def clear_selection(self):
         self.legal_moves = None
@@ -40,3 +41,27 @@ class GameController:
         self.legal_moves = self.piece_selected.get_legal_moves(
             [row, col], self.game_grid
         )
+
+
+def sliding_moves(piece, position, grid, directions):
+    moves = []
+    row, col = position
+
+    for dr, dc in directions:
+        r, c = row + dr, col + dc
+
+        while 0 <= r < 8 and 0 <= c < 8:
+            if grid.is_empty(r, c):
+                moves.append([r, c])
+
+            elif grid.is_enemy(r, c, piece.is_white):
+                moves.append([r, c])
+                break
+
+            else:
+                break
+
+            r += dr
+            c += dc
+
+    return moves

@@ -7,27 +7,30 @@ class GameController:
         self.is_white_turn = True
 
     def handle_click(self, row, col):
+        b_row, b_col = self.game_grid.board_to_screen(row, col)
         if self.legal_moves:
-            if [row, col] in self.legal_moves:
+            if [b_row, b_col] in self.legal_moves:
                 self.game_grid.move_piece(
                     self.piece_selected,
                     self.piece_selected_position,
-                    [row, col]
+                    [b_row, b_col]
                 )
-
                 self.is_white_turn = not self.is_white_turn
                 self.clear_selection()
 
-            elif self.game_grid.is_empty(row, col):
+            elif self.game_grid.is_empty(b_row, b_col):
                 self.clear_selection()
 
-            elif self.is_white_turn == self.game_grid.grid[row][col].is_white:
-                self.select_piece(row, col)
+            else:
+                piece = self.game_grid.grid[b_row][b_col]
+                if piece != 0 and self.is_white_turn == piece.is_white:
+                    self.select_piece(b_row, b_col)
 
         else:
-            if (not self.game_grid.is_empty(row, col) and
-                self.is_white_turn == self.game_grid.grid[row][col].is_white):
-                self.select_piece(row, col)
+            piece = self.game_grid.grid[b_row][b_col]
+            if piece != 0 and self.is_white_turn == piece.is_white:
+                self.select_piece(b_row, b_col)
+
                 
 
     def clear_selection(self):

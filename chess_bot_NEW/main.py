@@ -53,7 +53,7 @@ def main():
     black_pieces, white_pieces = create_pieces(PIECE_SPRITESHEET)
 
     game_grid = p.Grid(8, 8, TILE_SIZE, BORDER)
-    game_grid.populate_grid(black_pieces, white_pieces, True)
+    game_grid.populate_grid(black_pieces, white_pieces)
 
     controller = GameController(game_grid)   
 

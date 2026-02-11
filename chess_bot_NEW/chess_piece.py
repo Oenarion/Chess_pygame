@@ -65,8 +65,18 @@ class Grid():
         
         return pieces
         
-    def draw(self, screen, color, legal_moves):
+    def draw(self, screen, color, legal_moves, selected_square = None):
         self.draw_chessboard(screen, color)
+        if selected_square:
+            r, c = selected_square
+            rect = pygame.Rect(
+                c * self.tile_size,
+                self.border + r * self.tile_size,
+                self.tile_size,
+                self.tile_size,
+            )
+            pygame.draw.rect(screen, (210, 20, 20), rect)
+            
         if legal_moves:
             self.draw_legal_moves(screen, legal_moves)
         self.draw_pieces(screen)    
@@ -93,7 +103,7 @@ class Grid():
 
             pygame.draw.circle(screen, (255, 200, 33),
             (c * self.tile_size + self.tile_size // 2,self.border + r * self.tile_size + self.tile_size // 2,),
-            self.tile_size // 2 - 5)
+            self.tile_size // 2 - 7)
             
     def draw_pieces(self, screen):
         for i in range(8):
@@ -287,10 +297,10 @@ class Pawn(ChessPiece):
         # check first square
         if 0 <= row+direction < 8 and grid.is_empty(row+direction, col):
             moves.append([row+direction, col])  
-        # check second square if pawn never moved
-        if self.first_move:
-            if grid.is_empty(row+(direction*2), col) and row+(direction*2) >= 0:
-                moves.append([row+(direction*2), col])
+            # check second square if pawn never moved
+            if self.first_move:
+                if grid.is_empty(row+(direction*2), col) and row+(direction*2) >= 0:
+                    moves.append([row+(direction*2), col])
         if col + 1 < 8 and grid.is_enemy(row + direction, col + 1, self.is_white):
             moves.append([row + direction, col + 1])
         if col - 1 >= 0 and grid.is_enemy(row + direction, col - 1, self.is_white):
@@ -299,7 +309,7 @@ class Pawn(ChessPiece):
         en_passant = grid.can_en_passant(position, direction)
         if en_passant != (-1, -1):
             moves.append(en_passant)
-        print(moves)
+
         return moves
             
         

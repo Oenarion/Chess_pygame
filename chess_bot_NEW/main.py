@@ -79,7 +79,7 @@ def main():
                     # handles all the moving piece part
                     controller.handle_click(row, col) 
 
-        game_grid.draw(screen, grid_colors, controller.legal_moves)
+        game_grid.draw(screen, grid_colors, controller.legal_moves, controller.piece_selected_position)
 
         pygame.display.flip()
 

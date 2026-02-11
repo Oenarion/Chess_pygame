@@ -9,6 +9,7 @@ class GameController:
     def handle_click(self, row, col):
         b_row, b_col = self.game_grid.board_to_screen(row, col)
         if self.legal_moves:
+            print([b_row, b_col], self.legal_moves)
             if [b_row, b_col] in self.legal_moves:
                 self.game_grid.move_piece(
                     self.piece_selected,

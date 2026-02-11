@@ -159,21 +159,21 @@ class Grid():
                 
     def can_en_passant(self, pos, direction):
         if not self.last_move:
-            return (-1, -1)
+            return [-1, -1]
         
         lm = self.last_move
         
         if not lm["double_step"]:
-            return (-1,-1)
+            return [-1,-1]
         
         # same row
         if (lm["to"][0] - pos[0]) == 0:
             # check if they are adjacent
             # enemy pawn on the left
             if abs(pos[1] - lm["to"][1]) == 1:
-                return (pos[0]+direction,lm["to"][1]) 
+                return [pos[0]+direction,lm["to"][1]] 
                 
-        return (-1, -1)
+        return [-1, -1]
     
     def is_square_attacked(self, square, pieces):
         for piece, pos in pieces:
@@ -285,7 +285,7 @@ class Pawn(ChessPiece):
         direction = -1 if self.is_white else 1
         moves = []
         # check first square
-        if grid.is_empty(row+direction, col) and row+direction >= 0:
+        if 0 <= row+direction < 8 and grid.is_empty(row+direction, col):
             moves.append([row+direction, col])  
         # check second square if pawn never moved
         if self.first_move:
@@ -299,7 +299,7 @@ class Pawn(ChessPiece):
         en_passant = grid.can_en_passant(position, direction)
         if en_passant != (-1, -1):
             moves.append(en_passant)
-            
+        print(moves)
         return moves
             
         

@@ -166,25 +166,31 @@ class Grid():
             "to": to_pos,
             "double_step": isinstance(piece, Pawn) and abs(from_pos[0] - to_pos[0]) == 2
         }
+        
+    def get_king_square(self, is_white):
+        for row in range(8):
+            for col in range(8):
+                if isinstance(self.grid[row][col], King) and self.grid[row][col].is_white == is_white: 
+                    return (row, col)
                 
     def can_en_passant(self, pos, direction):
         if not self.last_move:
-            return [-1, -1]
+            return None
         
         lm = self.last_move
         
         if not lm["double_step"]:
-            return [-1,-1]
+            return None
         
         # same row
         if (lm["to"][0] - pos[0]) == 0:
             # check if they are adjacent
             # enemy pawn on the left
             if abs(pos[1] - lm["to"][1]) == 1:
-                return [pos[0]+direction,lm["to"][1]] 
+                return (pos[0]+direction,lm["to"][1]) 
                 
-        return [-1, -1]
-    
+        return None
+        
     def is_square_attacked(self, square, pieces):
         for piece, pos in pieces:
             moves = piece.get_attack_squares(pos, self)
@@ -202,21 +208,21 @@ class Grid():
 
         # check all the condition that don't let castle happen
         if (not isinstance(king, King)) or (not isinstance(rook, Rook)):
-            return False, [-1, -1]
+            return False, None
 
         if not king.castle or not rook.castle:
-            return False, [-1, -1]
+            return False, None
 
         if (not self.is_empty(row, 5)) or (not self.is_empty(row, 6)):
-            return False, [-1, -1]
+            return False, None
 
         # king is in check or other square are attacked
         if self.is_square_attacked([row, 4], enemy_pieces):
-            return False, [-1, -1]
+            return False, None
         if self.is_square_attacked([row, 5], enemy_pieces) or self.is_square_attacked([row, 6], enemy_pieces):
-            return False, [-1, -1]
+            return False, None
 
-        return True, [row, 6]
+        return True, (row, 6)
             
     def can_long_castle(self, king_pos, enemy_color):
         row, col = king_pos
@@ -226,21 +232,21 @@ class Grid():
         rook = self.grid[row][0]
 
         if (not isinstance(king, King)) or (not isinstance(rook, Rook)):
-            return False, [-1, -1]
+            return False, None
 
         if not king.castle or not rook.castle:
-            return False, [-1, -1]
+            return False, None
 
         # squares between rook and king: 1,2,3 must be empty
         if (not self.is_empty(row, 1)) or (not self.is_empty(row, 2)) or (not self.is_empty(row, 3)):
-            return False, [-1, -1]
+            return False, None
 
         if self.is_square_attacked([row, 4], enemy_pieces):
-            return False, [-1, -1]
+            return False, None
         if self.is_square_attacked([row, 3], enemy_pieces) or self.is_square_attacked([row, 2], enemy_pieces):
-            return False, [-1, -1]
+            return False, None
 
-        return True, [row, 2]
+        return True, (row, 2)
 
 
 class SpriteSheet:
@@ -268,6 +274,33 @@ class ChessPiece:
         x = col * tile_size
         y = row * tile_size + border
         screen.blit(self.sprite, (x, y))
+        
+    def get_pseudo_legal_moves(self, position, grid):
+        raise NotImplementedError
+        
+    def get_legal_moves(self, position, grid: Grid):
+        row, col = position
+        # get_pseudo_legal_moves will be in each piece.
+        pseudo_moves = self.get_pseudo_legal_moves(position, grid)
+        king_pos = grid.get_king_square(self.is_white)
+        legal_moves = []
+        for move in pseudo_moves:
+            move_r, move_c = move
+            # modify the grid with the plausible move
+            temp = grid.grid[move_r][move_c]
+            grid.grid[move_r][move_c] = grid.grid[row][col]
+            grid.grid[row][col] = 0
+            # we get the enemy pieces here in case we got a capture with the move
+            enemy_pieces = grid.get_all_pieces(not self.is_white)
+
+            # check if the king is in dange
+            if not grid.is_square_attacked(king_pos, enemy_pieces):
+                legal_moves.append(move)
+            # swap back the grid
+            grid.grid[row][col] = grid.grid[move_r][move_c]
+            grid.grid[move_r][move_c] = temp
+    
+        return legal_moves
 
 class Pawn(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
@@ -287,32 +320,33 @@ class Pawn(ChessPiece):
         for dc in (-1, 1):
             r, c = row + direction, col + dc
             if 0 <= r < 8 and 0 <= c < 8:
-                attacks.append([r, c])
+                attacks.append((r, c))
         return attacks 
         
-    def get_legal_moves(self, position, grid: Grid):
+    def get_pseudo_legal_moves(self, position, grid: Grid):
         row, col = position
         direction = -1 if self.is_white else 1
         moves = []
         # check first square
         if 0 <= row+direction < 8 and grid.is_empty(row+direction, col):
-            moves.append([row+direction, col])  
+            moves.append((row+direction, col))  
             # check second square if pawn never moved
             if self.first_move:
                 if grid.is_empty(row+(direction*2), col) and row+(direction*2) >= 0:
-                    moves.append([row+(direction*2), col])
+                    moves.append((row+(direction*2), col))
         if col + 1 < 8 and grid.is_enemy(row + direction, col + 1, self.is_white):
-            moves.append([row + direction, col + 1])
+            moves.append((row + direction, col + 1))
         if col - 1 >= 0 and grid.is_enemy(row + direction, col - 1, self.is_white):
-            moves.append([row + direction, col - 1])
+            moves.append((row + direction, col - 1))
         
         en_passant = grid.can_en_passant(position, direction)
-        if en_passant != (-1, -1):
+        if en_passant != None:
             moves.append(en_passant)
 
         return moves
             
-        
+
+    
 class Rook(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
         sprite = spritesheet.get_sprite(0+32*is_white, 32, 32, 32, scale)
@@ -321,9 +355,9 @@ class Rook(ChessPiece):
         self.castle = True       
         
     def get_attack_squares(self, position, grid: Grid):
-        return self.get_legal_moves(position, grid)
+        return self.get_pseudo_legal_moves(position, grid)
         
-    def get_legal_moves(self, position, grid: Grid):
+    def get_pseudo_legal_moves(self, position, grid: Grid):
         directions = [
         (-1, 0),
         (1, 0),
@@ -332,6 +366,7 @@ class Rook(ChessPiece):
         ]
         return utils.sliding_moves(self, position, grid, directions)
         
+    
 class Bishop(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
         sprite = spritesheet.get_sprite(0+32*is_white, 64, 32, 32, scale)
@@ -339,9 +374,9 @@ class Bishop(ChessPiece):
         super().__init__("bishop", sprite)
         
     def get_attack_squares(self, position, grid: Grid):
-        return self.get_legal_moves(position, grid)
+        return self.get_pseudo_legal_moves(position, grid)
         
-    def get_legal_moves(self, position, grid: Grid):
+    def get_pseudo_legal_moves(self, position, grid: Grid):
         directions = [
         (-1, -1),
         (1, -1),
@@ -357,7 +392,7 @@ class Knight(ChessPiece):
         super().__init__("knight", sprite)
         
     def get_attack_squares(self, position, grid: Grid):
-        return self.get_legal_moves(position, grid)
+        return self.get_pseudo_legal_moves(position, grid)
         
     def get_knight_moves(self, position, grid: Grid, directions):
         row, col = position
@@ -366,9 +401,9 @@ class Knight(ChessPiece):
         c = col + dc
         
         if 0 <= r < 8 and 0 <= c < 8 and (grid.is_empty(r,c) or grid.is_enemy(r,c, self.is_white)):
-            return [r,c]
+            return (r,c)
                 
-    def get_legal_moves(self, position, grid: Grid):
+    def get_pseudo_legal_moves(self, position, grid: Grid):
         moves = []
         all_directions = [
             (-1, -2), (-1, 2), (1, -2), (1, 2),
@@ -388,9 +423,9 @@ class Queen(ChessPiece):
         super().__init__("queen", sprite)
         
     def get_attack_squares(self, position, grid: Grid):
-        return self.get_legal_moves(position, grid)
+        return self.get_pseudo_legal_moves(position, grid)
         
-    def get_legal_moves(self, position, grid: Grid):
+    def get_pseudo_legal_moves(self, position, grid: Grid):
         
         directions = [
         (-1, 0), (1, 0), (0, -1), (0, 1),
@@ -425,10 +460,10 @@ class King(ChessPiece):
         c = col + dc
         
         if 0 <= r < 8 and 0 <= c < 8 and (grid.is_empty(r,c) or grid.is_enemy(r,c, self.is_white)):
-            return [r,c]
+            return (r,c)
         
         
-    def get_legal_moves(self, position, grid: Grid):
+    def get_pseudo_legal_moves(self, position, grid: Grid):
         moves = []
         all_directions = [
             (-1, 0), (-1, -1), (0, -1), (1, -1),
@@ -447,3 +482,27 @@ class King(ChessPiece):
                 moves.append(move)
         
         return moves
+    
+    def get_legal_moves(self, position, grid):
+        row, col = position
+        # get_pseudo_legal_moves will be in each piece.
+        pseudo_moves = self.get_pseudo_legal_moves(position, grid)
+        legal_moves = []
+        for move in pseudo_moves:
+            move_r, move_c = move
+            king_pos = (move_r, move_c)
+            # modify the grid with the plausible move
+            temp = grid.grid[move_r][move_c]
+            grid.grid[move_r][move_c] = grid.grid[row][col]
+            grid.grid[row][col] = 0
+            # we get the enemy pieces here in case we got a capture with the move
+            enemy_pieces = grid.get_all_pieces(not self.is_white)
+            
+            # check if the king is in dange
+            if not grid.is_square_attacked(king_pos, enemy_pieces):
+                legal_moves.append(move)
+            # swap back the grid
+            grid.grid[row][col] = grid.grid[move_r][move_c]
+            grid.grid[move_r][move_c] = temp
+    
+        return legal_moves

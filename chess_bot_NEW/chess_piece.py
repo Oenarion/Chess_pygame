@@ -217,9 +217,9 @@ class Grid():
             return False, None
 
         # king is in check or other square are attacked
-        if self.is_square_attacked([row, 4], enemy_pieces):
+        if self.is_square_attacked((row, col), enemy_pieces):
             return False, None
-        if self.is_square_attacked([row, 5], enemy_pieces) or self.is_square_attacked([row, 6], enemy_pieces):
+        if self.is_square_attacked((row, 5), enemy_pieces) or self.is_square_attacked((row, 6), enemy_pieces):
             return False, None
 
         return True, (row, 6)
@@ -241,9 +241,9 @@ class Grid():
         if (not self.is_empty(row, 1)) or (not self.is_empty(row, 2)) or (not self.is_empty(row, 3)):
             return False, None
 
-        if self.is_square_attacked([row, 4], enemy_pieces):
+        if self.is_square_attacked((row, col), enemy_pieces):
             return False, None
-        if self.is_square_attacked([row, 3], enemy_pieces) or self.is_square_attacked([row, 2], enemy_pieces):
+        if self.is_square_attacked((row, 3), enemy_pieces) or self.is_square_attacked((row, 2), enemy_pieces):
             return False, None
 
         return True, (row, 2)

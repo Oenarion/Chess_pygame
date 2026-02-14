@@ -77,8 +77,11 @@ def main():
                     col = int(x // TILE_SIZE)
 
                     # handles all the moving piece part
-                    controller.handle_click(row, col) 
-
+                    is_checkmate = controller.handle_click(row, col) 
+                    if is_checkmate:
+                        game_over_text = "white won" if not controller.is_white_turn else "black won"
+                        print(f"GAME OVER: {game_over_text}")
+                        
         game_grid.draw(screen, grid_colors, controller.legal_moves, controller.piece_selected_position)
 
         pygame.display.flip()

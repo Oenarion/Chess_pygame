@@ -248,7 +248,20 @@ class Grid():
 
         return True, (row, 2)
 
-
+    def checkmate(self, king_pos, color):
+        row, col = king_pos
+        pieces = self.get_all_pieces(color)
+        enemy_pieces = self.get_all_pieces(not color)
+        # king cannot move and is under attack
+        if not self.grid[row][col].get_legal_moves(king_pos, self) and self.is_square_attacked(king_pos, enemy_pieces):
+            for piece, piece_pos in pieces:
+                # if at least one piece as a legal move we don't have a checkmate position
+                if piece.get_legal_moves(piece_pos, self):
+                    return False
+            return True
+        else:
+            return False
+            
 class SpriteSheet:
     def __init__(self, filename):
         self.sheet = pygame.image.load(filename).convert_alpha()

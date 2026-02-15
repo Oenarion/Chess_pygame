@@ -9,15 +9,16 @@ WIDTH = 512
 HEIGHT = 592
 BORDER = 40
 TILE_SIZE = (HEIGHT - 2 * BORDER) // 8
+SCALE = 2
 
 def create_pieces(spritesheet):            
     black_pieces = {}
-    b_pawns = [p.Pawn(spritesheet, scale=2, is_white=0) for _ in range(8)]
-    b_rooks = [p.Rook(spritesheet, scale=2, is_white=0) for _ in range(2)]
-    b_knights = [p.Knight(spritesheet, scale=2, is_white=0) for _ in range(2)]
-    b_bishops = [p.Bishop(spritesheet, scale=2, is_white=0) for _ in range(2)]
-    b_queen = p.Queen(spritesheet, scale=2, is_white=0)
-    b_king = p.King(spritesheet, scale=2, is_white=0)
+    b_pawns = [p.Pawn(spritesheet, scale=SCALE, is_white=0) for _ in range(8)]
+    b_rooks = [p.Rook(spritesheet, scale=SCALE, is_white=0) for _ in range(2)]
+    b_knights = [p.Knight(spritesheet, scale=SCALE, is_white=0) for _ in range(2)]
+    b_bishops = [p.Bishop(spritesheet, scale=SCALE, is_white=0) for _ in range(2)]
+    b_queen = p.Queen(spritesheet, scale=SCALE, is_white=0)
+    b_king = p.King(spritesheet, scale=SCALE, is_white=0)
     black_pieces["pawn"] = b_pawns
     black_pieces["rook"] = b_rooks
     black_pieces["knight"] = b_knights
@@ -26,12 +27,12 @@ def create_pieces(spritesheet):
     black_pieces["king"] = b_king
     
     white_pieces = {}
-    w_rooks = [p.Rook(spritesheet, scale=2, is_white=1) for _ in range(2)]
-    w_pawns = [p.Pawn(spritesheet, scale=2, is_white=1) for _ in range(8)]
-    w_knights = [p.Knight(spritesheet, scale=2, is_white=1) for _ in range(2)]
-    w_bishops = [p.Bishop(spritesheet, scale=2, is_white=1) for _ in range(2)]
-    w_queen = p.Queen(spritesheet, scale=2, is_white=1)
-    w_king = p.King(spritesheet, scale=2, is_white=1)
+    w_rooks = [p.Rook(spritesheet, scale=SCALE, is_white=1) for _ in range(2)]
+    w_pawns = [p.Pawn(spritesheet, scale=SCALE, is_white=1) for _ in range(8)]
+    w_knights = [p.Knight(spritesheet, scale=SCALE, is_white=1) for _ in range(2)]
+    w_bishops = [p.Bishop(spritesheet, scale=SCALE, is_white=1) for _ in range(2)]
+    w_queen = p.Queen(spritesheet, scale=SCALE, is_white=1)
+    w_king = p.King(spritesheet, scale=SCALE, is_white=1)
     white_pieces["pawn"] = w_pawns
     white_pieces["rook"] = w_rooks
     white_pieces["knight"] = w_knights
@@ -57,7 +58,7 @@ def main():
     # records the first position of the board
     game_grid.record_position(True)
 
-    controller = GameController(game_grid)   
+    controller = GameController(game_grid, PIECE_SPRITESHEET, SCALE)   
 
     grid_colors = [WHITE, GREEN]
     running = True
@@ -84,7 +85,8 @@ def main():
                         print(f"current gamestate: {gamestate}")
                         
         game_grid.draw(screen, grid_colors, controller.legal_moves, controller.piece_selected_position)
-
+        controller.draw_promotion_choices(screen)
+        
         pygame.display.flip()
 
     pygame.quit()

@@ -1,4 +1,5 @@
 from enum import Enum
+import pygame
 
 class GameState(Enum):
     ONGOING = 0
@@ -8,14 +9,19 @@ class GameState(Enum):
     DRAW_INSUFFICIENT = 4
     DRAW_FIFTY_MOVE = 5
     DRAW_THREEFOLD = 6
+    PROMOTION = 7
     
 class GameController:
-    def __init__(self, game_grid):
+    def __init__(self, game_grid, spritesheet, scale):
         self.game_grid = game_grid
         self.legal_moves = None
+        self.spritesheet = spritesheet
         self.piece_selected = None
         self.piece_selected_position = None
         self.is_white_turn = True
+        self.pending_promotion = None
+        self.scale = scale
+        self._build_promo_cache()
 
     def handle_click(self, row, col):
         """
@@ -27,6 +33,12 @@ class GameController:
             INT, Returns the state of the game -> check class GameState
         """
         b_row, b_col = self.game_grid.board_to_screen(row, col)
+        if self.pending_promotion:
+            is_promoted = self.handle_promotion_click(b_row, b_col)
+            if is_promoted:
+                return GameState.ONGOING
+            return GameState.PROMOTION
+            
         if self.legal_moves:
             if (b_row, b_col) in self.legal_moves:
                 self.game_grid.move_piece(
@@ -34,6 +46,11 @@ class GameController:
                     self.piece_selected_position,
                     (b_row, b_col)
                 )
+                # save promotion state and return it
+                if self.game_grid.pawn_promotion:
+                    self.pending_promotion = self.game_grid.pawn_promotion
+                    return GameState.PROMOTION
+                
                 self.is_white_turn = not self.is_white_turn
                 self.clear_selection()
                 # check gamestate
@@ -53,6 +70,67 @@ class GameController:
                 self.select_piece(b_row, b_col)
             return GameState.ONGOING
         
+    def _build_promo_cache(self):
+        # save the sprites for promotion
+        self.promo_sprites = self.game_grid.generate_promotion_pieces(self.spritesheet, self.scale)
+        
+    def draw_promotion_choices(self, screen):
+        if not self.pending_promotion:
+            return 
+        
+        pr, pc, is_white = self.pending_promotion
+        # print(f"pawn position: ({pr, pc})")
+        r, c = self.game_grid.board_to_screen(pr, pc)
+        # print(f"pawn position after board to screen: ({pr, pc})")
+        color = (211, 211, 211)
+        order = ["Q", "R", "B", "K"]
+        direction = -1 if pc > 4 else 1
+
+        for i, key in enumerate(order):
+            dir = (i+1) * direction
+            # print(f"board coordinates -> row: {r}  col: {c+dir}")
+            # print(f"screen coordinates -> ({self.game_grid.border + r * self.game_grid.tile_size}, {c+dir * self.game_grid.tile_size})")
+            rect = pygame.Rect((c+dir) * self.game_grid.tile_size, self.game_grid.border + r * self.game_grid.tile_size,
+                self.game_grid.tile_size, self.game_grid.tile_size)
+            pygame.draw.rect(screen, color, rect)
+            piece = self.promo_sprites[is_white][key]
+            piece.draw(screen, self.game_grid.tile_size, self.game_grid.border, (r, c+dir))
+
+    def handle_promotion_click(self, b_row, b_col):
+        if not self.pending_promotion:
+            return False
+
+        pr, pc, is_white = self.pending_promotion
+        r, c = self.game_grid.board_to_screen(pr, pc)
+        # same logic as draw
+        direction = -1 if pc > 4 else 1
+        order = ["Q", "R", "B", "K"]  
+
+        # ignore if pawn is clicked
+        if (b_row, b_col) == (r, c):
+            return False
+
+        # check if one of the 4 squares is clicked
+        chosen_key = None
+        for i, key in enumerate(order):
+            dir = (i + 1) * direction
+            if (b_row, b_col) == (r, c + dir):
+                chosen_key = key
+                break
+
+        # clicked somewhere else, ignore
+        if chosen_key is None:
+            return False
+
+        self.game_grid.promote_pawn((pr, pc), chosen_key, is_white, self.spritesheet, self.scale)
+
+        # not promotion anymore
+        self.pending_promotion = None
+        self.legal_moves = None
+        self.piece_selected = None
+        self.piece_selected_position = None
+        self.is_white_turn = not self.is_white_turn
+        return True
         
 
     def clear_selection(self):

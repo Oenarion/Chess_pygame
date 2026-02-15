@@ -18,7 +18,9 @@ class Grid():
         # state of the board
         self.board_signatures = defaultdict(int)
         # used for board signature
-        self.en_passant_target = None         
+        self.en_passant_target = None
+        # check if pawn is getting promoted
+        self.pawn_promotion = None
         
     def get_cell(self, row, col):
         return self.grid[row][col]
@@ -120,6 +122,37 @@ class Grid():
                     r, c = self.board_to_screen(i, j)
                     piece.draw(screen, self.tile_size, self.border, (r, c))
         
+    def generate_promotion_pieces(self, spritesheet, scale):
+        promo_sprites = {
+            True: {  # white
+                "Q": Queen(spritesheet, scale, True),
+                "R": Rook(spritesheet, scale, True),
+                "B": Bishop(spritesheet, scale, True),
+                "K": Knight(spritesheet, scale, True),
+            },
+            False: { # black
+                "Q": Queen(spritesheet, scale, False),
+                "R": Rook(spritesheet, scale, False),
+                "B": Bishop(spritesheet, scale, False),
+                "K": Knight(spritesheet, scale, False),
+            },
+        }
+        
+        return promo_sprites
+    
+    def promote_pawn(self, pos, chosen_key, is_white, spritesheet, scale):
+        r, c = pos
+
+        if chosen_key == "Q":
+            self.grid[r][c] = Queen(spritesheet, scale, is_white)
+        elif chosen_key == "R":
+            self.grid[r][c] = Rook(spritesheet, scale, is_white)
+        elif chosen_key == "B":
+            self.grid[r][c] = Bishop(spritesheet, scale, is_white)
+        else:
+            self.grid[r][c] = Knight(spritesheet, scale, is_white)
+
+        
     def is_empty(self, row, col):
         # empty space
         return self.grid[row][col] == 0
@@ -134,7 +167,7 @@ class Grid():
         s_row, s_col = from_pos
         e_row, e_col = to_pos
         has_eaten = False
-        
+        self.pawn_promotion = None
         # get special capture // en passant
         if isinstance(piece, Pawn):
             if s_col != e_col and self.is_empty(e_row, e_col):
@@ -163,8 +196,13 @@ class Grid():
         self.grid[e_row][e_col] = piece
         self.grid[s_row][s_col] = 0
         
+        # check for promotion
         if isinstance(piece, Pawn):
             piece.first_move = False
+            last_rank = 0 if piece.is_white else 7
+            # trigger promotion
+            if e_row == last_rank:
+                self.pawn_promotion = (e_row, e_col, piece.is_white)
             
         if isinstance(piece, Rook):
             piece.castle = False
@@ -184,8 +222,7 @@ class Grid():
         if has_eaten:
             self.last_eaten = self.turn
         self.turn += 1
-        
-        # save signature
+
         
     def get_king_square(self, is_white):
         for row in range(8):
@@ -388,8 +425,7 @@ class Grid():
             self.board_signatures[sig] = 1
         
         return self.board_signatures[sig]
-
-        
+     
 class SpriteSheet:
     def __init__(self, filename):
         self.sheet = pygame.image.load(filename).convert_alpha()

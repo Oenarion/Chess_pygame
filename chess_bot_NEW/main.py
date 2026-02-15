@@ -62,10 +62,10 @@ def main():
 
     grid_colors = [WHITE, GREEN]
     running = True
-
+    
     while running:
         screen.fill((0, 0, 0))
-
+        promotion_gamestate = False
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
@@ -83,8 +83,12 @@ def main():
                     gamestate = controller.handle_click(row, col) 
                     if gamestate != GameState.ONGOING:
                         print(f"current gamestate: {gamestate}")
-                        
-        game_grid.draw(screen, grid_colors, controller.legal_moves, controller.piece_selected_position)
+                    if gamestate == GameState.PROMOTION:
+                        promotion_gamestate = True
+                    print(f"PROMOTION GAMESTATE: {promotion_gamestate}")
+        
+        in_promotion = controller.pending_promotion is not None
+        game_grid.draw(screen, grid_colors, controller.legal_moves, in_promotion, controller.piece_selected_position)
         controller.draw_promotion_choices(screen)
         
         pygame.display.flip()

@@ -74,20 +74,21 @@ class Grid():
         
         return pieces
         
-    def draw(self, screen, color, legal_moves, selected_square = None):
+    def draw(self, screen, color, legal_moves, in_promotion, selected_square = None):
         self.draw_chessboard(screen, color)
-        if selected_square:
-            r, c = selected_square
-            rect = pygame.Rect(
-                c * self.tile_size,
-                self.border + r * self.tile_size,
-                self.tile_size,
-                self.tile_size,
-            )
-            pygame.draw.rect(screen, (210, 20, 20), rect)
-            
-        if legal_moves:
-            self.draw_legal_moves(screen, legal_moves)
+        if not in_promotion:
+            if selected_square:
+                r, c = selected_square
+                rect = pygame.Rect(
+                    c * self.tile_size,
+                    self.border + r * self.tile_size,
+                    self.tile_size,
+                    self.tile_size,
+                )
+                pygame.draw.rect(screen, (210, 20, 20), rect)
+                
+            if legal_moves:
+                self.draw_legal_moves(screen, legal_moves)
         self.draw_pieces(screen)    
     
     def draw_chessboard(self, screen, colors):
@@ -112,7 +113,7 @@ class Grid():
 
             pygame.draw.circle(screen, (255, 200, 33),
             (c * self.tile_size + self.tile_size // 2,self.border + r * self.tile_size + self.tile_size // 2,),
-            self.tile_size // 2 - 7)
+            self.tile_size // 2 - 15)
             
     def draw_pieces(self, screen):
         for i in range(8):

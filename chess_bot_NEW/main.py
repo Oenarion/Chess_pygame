@@ -1,7 +1,7 @@
 import pygame
 import math
 import chess_piece as p
-from utils import GameController
+from utils import GameController, GameState
 
 WHITE=(255,255,255)
 GREEN=(118,150,86)
@@ -54,6 +54,8 @@ def main():
 
     game_grid = p.Grid(8, 8, TILE_SIZE, BORDER)
     game_grid.populate_grid(black_pieces, white_pieces)
+    # records the first position of the board
+    game_grid.record_position(True)
 
     controller = GameController(game_grid)   
 
@@ -77,10 +79,9 @@ def main():
                     col = int(x // TILE_SIZE)
 
                     # handles all the moving piece part
-                    is_checkmate = controller.handle_click(row, col) 
-                    if is_checkmate:
-                        game_over_text = "white won" if not controller.is_white_turn else "black won"
-                        print(f"GAME OVER: {game_over_text}")
+                    gamestate = controller.handle_click(row, col) 
+                    if gamestate != GameState.ONGOING:
+                        print(f"current gamestate: {gamestate}")
                         
         game_grid.draw(screen, grid_colors, controller.legal_moves, controller.piece_selected_position)
 

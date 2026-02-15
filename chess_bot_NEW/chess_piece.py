@@ -1,5 +1,6 @@
 import pygame
 import utils
+from collections import defaultdict
 
 class Grid():
     def __init__(self, rows, cols, tile_size, border, player_is_white=True):
@@ -12,6 +13,12 @@ class Grid():
         self.last_move = None
         # we flip rendering if player is white, not the game logic
         self.flip = not player_is_white
+        self.turn = 0
+        self.last_eaten = 0
+        # state of the board
+        self.board_signatures = defaultdict(int)
+        # used for board signature
+        self.en_passant_target = None         
         
     def get_cell(self, row, col):
         return self.grid[row][col]
@@ -61,7 +68,7 @@ class Grid():
         for row in range(len(self.grid)):
             for col in range(len(self.grid[0])):
                 if self.grid[row][col] != 0 and self.grid[row][col].is_white == color:
-                    pieces.append([self.grid[row][col], [row, col]])
+                    pieces.append((self.grid[row][col], (row, col)))
         
         return pieces
         
@@ -126,12 +133,15 @@ class Grid():
     def move_piece(self, piece, from_pos, to_pos):
         s_row, s_col = from_pos
         e_row, e_col = to_pos
+        has_eaten = False
         
         # get special capture // en passant
         if isinstance(piece, Pawn):
             if s_col != e_col and self.is_empty(e_row, e_col):
                 self.grid[s_row][e_col] = 0
-        
+                has_eaten = True
+                self.en_passant_target = ()
+
         # check castle
         if isinstance(piece, King) and abs(e_col - s_col) == 2:
             # short
@@ -147,7 +157,9 @@ class Grid():
                 self.grid[s_row][0] = 0
                 rook.castle = False
 
-                
+        if self.grid[e_row][e_col] != 0:
+            has_eaten = True
+
         self.grid[e_row][e_col] = piece
         self.grid[s_row][s_col] = 0
         
@@ -164,8 +176,16 @@ class Grid():
             "piece": piece,
             "from": from_pos,
             "to": to_pos,
+            "eaten": has_eaten,
             "double_step": isinstance(piece, Pawn) and abs(from_pos[0] - to_pos[0]) == 2
         }
+        
+        # update turn
+        if has_eaten:
+            self.last_eaten = self.turn
+        self.turn += 1
+        
+        # save signature
         
     def get_king_square(self, is_white):
         for row in range(8):
@@ -261,7 +281,115 @@ class Grid():
             return True
         else:
             return False
-            
+
+    def any_legal_move(self, color):
+        """
+        Checks if any legal move is possible, used for draw.
+        """
+        pieces = self.get_all_pieces(color)
+        for piece, piece_pos in pieces:
+            if piece.get_legal_moves(piece_pos, self):
+                return True
+        return False 
+    
+    def check_insufficient_material(self):
+        white_pieces = self.get_all_pieces(True)
+        black_pieces = self.get_all_pieces(False)
+        
+        total = len(white_pieces) + len(black_pieces)
+        # just the kings left
+        if total == 2:
+            return True
+        # check if pattern is king + bishop, king or king + knight, king
+        if total == 3:
+            print(white_pieces)
+            print(black_pieces)
+            bigger = white_pieces if len(white_pieces) == 2 else black_pieces
+            for piece, _ in bigger:
+                # we check only bishop or knight because the king is implicit
+                if isinstance(piece, Bishop) or isinstance(piece, Knight):
+                    return True
+        # if king + bishop vs king + bishop with bishops of the same color
+        if total == 4:
+            if len(white_pieces) == 2 and len(black_pieces) == 2:
+                w_minor = next(((p, pos) for p, pos in white_pieces if not isinstance(p, King)), None)
+                b_minor = next(((p, pos) for p, pos in black_pieces if not isinstance(p, King)), None)
+
+                if w_minor and b_minor:
+                    wp, wpos = w_minor
+                    bp, bpos = b_minor
+                    
+                    # check if the bishops are the same color
+                    if isinstance(wp, Bishop) and isinstance(bp, Bishop):
+                        w_color = (wpos[0] + wpos[1]) % 2
+                        b_color = (bpos[0] + bpos[1]) % 2
+                        return w_color == b_color
+                
+        return False
+    
+    def position_signature(self, side_to_move_is_white: bool):
+        """
+        Saves the signature of the board, used to check draws.
+        """
+        # board placement
+        board = []
+        for r in range(8):
+            for c in range(8):
+                p = self.grid[r][c]
+                if p == 0:
+                    # empty squares
+                    board.append(".")
+                else:
+                    # upper case for white, lowercase for black
+                    ch = p.name[0].upper() 
+                    if not p.is_white:
+                        ch = ch.lower()
+                    board.append(ch)
+        board_str = "".join(board)
+
+        # castling rights
+        rights = []
+        # white
+        w_king_pos = self.get_king_square(True)
+        if w_king_pos:
+            wk = self.grid[w_king_pos[0]][w_king_pos[1]]
+            if isinstance(wk, King) and wk.castle:
+                if isinstance(self.grid[7][7], Rook) and self.grid[7][7] != 0 and self.grid[7][7].is_white and self.grid[7][7].castle:
+                    rights.append("K")
+                if isinstance(self.grid[7][0], Rook) and self.grid[7][0] != 0 and self.grid[7][0].is_white and self.grid[7][0].castle:
+                    rights.append("Q")
+        # black
+        b_king_pos = self.get_king_square(False)
+        if b_king_pos:
+            bk = self.grid[b_king_pos[0]][b_king_pos[1]]
+            if isinstance(bk, King) and bk.castle:
+                if isinstance(self.grid[0][7], Rook) and self.grid[0][7] != 0 and (not self.grid[0][7].is_white) and self.grid[0][7].castle:
+                    rights.append("k")
+                if isinstance(self.grid[0][0], Rook) and self.grid[0][0] != 0 and (not self.grid[0][0].is_white) and self.grid[0][0].castle:
+                    rights.append("q")
+        castling = "".join(rights) if rights else "-"
+
+        # en passant target
+        ep = self.en_passant_target if self.en_passant_target else "-"
+
+        # side to move
+        stm = "w" if side_to_move_is_white else "b"
+
+        return (board_str, stm, castling, ep)
+
+    def record_position(self, side_to_move_is_white):
+        """
+        Records the new position and returns the count number.
+        """
+        sig = self.position_signature(side_to_move_is_white)
+        if sig in self.board_signatures:
+            self.board_signatures[sig] += 1
+        else:
+            self.board_signatures[sig] = 1
+        
+        return self.board_signatures[sig]
+
+        
 class SpriteSheet:
     def __init__(self, filename):
         self.sheet = pygame.image.load(filename).convert_alpha()

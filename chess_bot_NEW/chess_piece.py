@@ -79,6 +79,7 @@ class Grid():
         if not in_promotion:
             if selected_square:
                 r, c = selected_square
+                r, c = self.board_to_screen(r, c)
                 rect = pygame.Rect(
                     c * self.tile_size,
                     self.border + r * self.tile_size,

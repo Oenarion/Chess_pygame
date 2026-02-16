@@ -32,8 +32,11 @@ class GameController:
         Returns:
             INT, Returns the state of the game -> check class GameState
         """
+        print(f"mouse clicked on: ({row},{col})")
         b_row, b_col = self.game_grid.board_to_screen(row, col)
+        print(f"mouse clicked on: ({b_row},{b_col})")
         if self.pending_promotion:
+            print(self.pending_promotion)
             is_promoted = self.handle_promotion_click(b_row, b_col)
             if is_promoted:
                 return GameState.ONGOING
@@ -81,10 +84,10 @@ class GameController:
         pr, pc, is_white = self.pending_promotion
         # print(f"pawn position: ({pr, pc})")
         r, c = self.game_grid.board_to_screen(pr, pc)
-        # print(f"pawn position after board to screen: ({pr, pc})")
+        # print(f"pawn position after board to screen: ({r, c})")
         color = (211, 211, 211)
         order = ["Q", "R", "B", "K"]
-        direction = -1 if pc > 4 else 1
+        direction = -1 if c > 4 else 1
 
         for i, key in enumerate(order):
             dir = (i+1) * direction
@@ -101,20 +104,19 @@ class GameController:
             return False
 
         pr, pc, is_white = self.pending_promotion
-        r, c = self.game_grid.board_to_screen(pr, pc)
         # same logic as draw
         direction = -1 if pc > 4 else 1
         order = ["Q", "R", "B", "K"]  
 
         # ignore if pawn is clicked
-        if (b_row, b_col) == (r, c):
+        if (b_row, b_col) == (pr, pc):
             return False
 
         # check if one of the 4 squares is clicked
         chosen_key = None
         for i, key in enumerate(order):
             dir = (i + 1) * direction
-            if (b_row, b_col) == (r, c + dir):
+            if (b_row, b_col) == (pr, pc + dir):
                 chosen_key = key
                 break
 

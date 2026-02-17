@@ -111,6 +111,7 @@ def main():
         if not game_over and controller.is_white_turn != player_color:
             if game_grid.anim is None:
                 controller.bot_move(ai_bot, controller.is_white_turn)
+                clock.tick() 
 
         if controller.pending_promotion and controller.is_white_turn == player_color:
             in_promotion = controller.pending_promotion

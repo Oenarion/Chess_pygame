@@ -346,19 +346,20 @@ class Grid():
         self.turn += 1
 
         # --- START ANIMATION (render-only) ---
-        duration = 0.2  # seconds
-        sx, sy = self.square_to_pixel(s_row, s_col)
-        ex, ey = self.square_to_pixel(e_row, e_col)
+        if not record_undo:
+            duration = 0.2  # seconds
+            sx, sy = self.square_to_pixel(s_row, s_col)
+            ex, ey = self.square_to_pixel(e_row, e_col)
 
-        self.anim = {
-            "piece": piece,
-            "from": (s_row, s_col),
-            "to": (e_row, e_col),
-            "start_px": (sx, sy),
-            "end_px": (ex, ey),
-            "t": 0.0,
-            "duration": duration,
-        }
+            self.anim = {
+                "piece": piece,
+                "from": (s_row, s_col),
+                "to": (e_row, e_col),
+                "start_px": (sx, sy),
+                "end_px": (ex, ey),
+                "t": 0.0,
+                "duration": duration,
+            }
 
         return undo
 

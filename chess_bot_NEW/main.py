@@ -113,7 +113,10 @@ def main():
             game_over = True
             print(f"GAME OVER: {gamestate}")
 
-        in_promotion = controller.pending_promotion is not None
+        if controller.pending_promotion and controller.is_white_turn == player_color:
+            in_promotion = controller.pending_promotion
+        else:
+            in_promotion = None
         game_grid.draw(screen, grid_colors, controller.legal_moves, in_promotion, controller.piece_selected_position)
         controller.draw_promotion_choices(screen)
         

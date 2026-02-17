@@ -140,6 +140,11 @@ class GameController:
         piece, move = bot.choose_move(self.game_grid, bot_color)
         piece_pos = self.game_grid.get_piece_pos(piece)
         self.game_grid.move_piece(piece, piece_pos, move)
+        # add promotion check
+        if self.game_grid.pawn_promotion:
+            self.pending_promotion = self.game_grid.pawn_promotion
+            return GameState.PROMOTION
+        
         self.is_white_turn = not self.is_white_turn
         return self.post_move_evaluation()
 

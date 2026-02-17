@@ -1,5 +1,6 @@
 from enum import Enum
 import pygame
+import bot
 
 class GameState(Enum):
     ONGOING = 0
@@ -32,16 +33,17 @@ class GameController:
         Returns:
             INT, Returns the state of the game -> check class GameState
         """
-        print(f"mouse clicked on: ({row},{col})")
         b_row, b_col = self.game_grid.board_to_screen(row, col)
-        print(f"mouse clicked on: ({b_row},{b_col})")
+        
+        # promotion
         if self.pending_promotion:
             print(self.pending_promotion)
             is_promoted = self.handle_promotion_click(b_row, b_col)
             if is_promoted:
                 return GameState.ONGOING
             return GameState.PROMOTION
-            
+             
+        # moving or not moving the piece
         if self.legal_moves:
             if (b_row, b_col) in self.legal_moves:
                 self.game_grid.move_piece(
@@ -134,6 +136,12 @@ class GameController:
         self.is_white_turn = not self.is_white_turn
         return True
         
+    def bot_move(self, bot, bot_color):
+        piece, move = bot.choose_move(self.game_grid, bot_color)
+        piece_pos = self.game_grid.get_piece_pos(piece)
+        self.game_grid.move_piece(piece, piece_pos, move)
+        self.is_white_turn = not self.is_white_turn
+        return self.post_move_evaluation()
 
     def clear_selection(self):
         self.legal_moves = None

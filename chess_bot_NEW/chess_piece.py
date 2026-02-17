@@ -22,8 +22,11 @@ class Grid():
         # check if pawn is getting promoted
         self.pawn_promotion = None
         
-    def get_cell(self, row, col):
-        return self.grid[row][col]
+    def get_piece_pos(self, piece):
+        for i in range(8):
+            for j in range(8):
+                if self.grid[i][j] == piece:
+                    return (i, j)
     
     def populate_grid(self, black_pieces, white_pieces):
         self.grid[0] = [
@@ -154,6 +157,19 @@ class Grid():
         else:
             self.grid[r][c] = Knight(spritesheet, scale, is_white)
 
+    def iter_legal_moves(self, color_is_white):
+        """
+        Returns all of the tuples of the possible moves of the pieces.
+        """
+        pieces = self.get_all_pieces(color_is_white)
+        final_moves = []
+        for piece, pos in pieces:
+            moves = piece.get_legal_moves(pos, self)
+            if moves:
+                # append also the piece so we know what to move
+                final_moves.append((piece, moves))
+        
+        return final_moves
         
     def is_empty(self, row, col):
         # empty space
@@ -225,7 +241,6 @@ class Grid():
             self.last_eaten = self.turn
         self.turn += 1
 
-        
     def get_king_square(self, is_white):
         for row in range(8):
             for col in range(8):

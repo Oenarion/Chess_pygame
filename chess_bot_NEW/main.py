@@ -2,6 +2,7 @@ import pygame
 import math
 import chess_piece as p
 from utils import GameController, GameState
+import bot
 
 WHITE=(255,255,255)
 GREEN=(118,150,86)
@@ -50,10 +51,13 @@ def main():
     pygame.display.set_caption("Chess Bot")
 
     PIECE_SPRITESHEET = p.SpriteSheet("chess_bot_NEW/pngs/chess_pieces.png")
-
+    
     black_pieces, white_pieces = create_pieces(PIECE_SPRITESHEET)
 
-    game_grid = p.Grid(8, 8, TILE_SIZE, BORDER)
+    player_color = True 
+    ai_bot = bot.RandomBot()
+    
+    game_grid = p.Grid(8, 8, TILE_SIZE, BORDER, player_color)
     game_grid.populate_grid(black_pieces, white_pieces)
     # records the first position of the board
     game_grid.record_position(True)
@@ -62,6 +66,8 @@ def main():
 
     grid_colors = [WHITE, GREEN]
     running = True
+    game_over = False
+    gamestate = GameState.ONGOING
     
     while running:
         screen.fill((0, 0, 0))
@@ -79,14 +85,34 @@ def main():
                     row = int((y - BORDER) // TILE_SIZE)
                     col = int(x // TILE_SIZE)
 
-                    # handles all the moving piece part
-                    gamestate = controller.handle_click(row, col) 
-                    if gamestate != GameState.ONGOING:
-                        print(f"current gamestate: {gamestate}")
-                    if gamestate == GameState.PROMOTION:
-                        promotion_gamestate = True
-                    print(f"PROMOTION GAMESTATE: {promotion_gamestate}")
-        
+                    # player turn
+                    if controller.is_white_turn == player_color:
+                        # handles all the moving piece part
+                        gamestate = controller.handle_click(row, col) 
+                        if gamestate != GameState.ONGOING:
+                            print(f"current gamestate: {gamestate}")
+                        if gamestate == GameState.PROMOTION:
+                            promotion_gamestate = True
+                        print(f"PROMOTION GAMESTATE: {promotion_gamestate}")
+                    
+            # BOT TURN
+            # check always if it's already game over
+            if not game_over and controller.is_white_turn != player_color:
+                if controller.pending_promotion:
+                    pr, pc, is_white = controller.pending_promotion
+                    # autopromote to queen for now
+                    game_grid.promote_pawn((pr, pc), 'Q', is_white, controller.spritesheet, controller.scale)
+                    controller.pending_promotion = None
+                    controller.is_white_turn = not controller.is_white_turn
+                    gamestate = controller.post_move_evaluation()
+                else:
+                    controller.bot_move(ai_bot, controller.is_white_turn)
+
+        # GAME OVER        
+        if gamestate != GameState.ONGOING and gamestate != GameState.PROMOTION:
+            game_over = True
+            print(f"GAME OVER: {gamestate}")
+
         in_promotion = controller.pending_promotion is not None
         game_grid.draw(screen, grid_colors, controller.legal_moves, in_promotion, controller.piece_selected_position)
         controller.draw_promotion_choices(screen)

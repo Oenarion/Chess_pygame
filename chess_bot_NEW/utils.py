@@ -1,16 +1,5 @@
-from enum import Enum
 import pygame
-import bot
-
-class GameState(Enum):
-    ONGOING = 0
-    CHECKMATE_WHITE_WINS = 1
-    CHECKMATE_BLACK_WINS = 2
-    DRAW_STALEMATE = 3
-    DRAW_INSUFFICIENT = 4
-    DRAW_FIFTY_MOVE = 5
-    DRAW_THREEFOLD = 6
-    PROMOTION = 7
+from gamestate import GameState
     
 class GameController:
     def __init__(self, game_grid, spritesheet, scale):
@@ -142,8 +131,9 @@ class GameController:
         self.game_grid.move_piece(piece, piece_pos, move)
         # add promotion check
         if self.game_grid.pawn_promotion:
-            self.pending_promotion = self.game_grid.pawn_promotion
-            return GameState.PROMOTION
+            pr, pc, is_white = self.game_grid.pawn_promotion
+            self.game_grid.promote_pawn((pr, pc), "Q", is_white, self.spritesheet, self.scale)
+            self.game_grid.pawn_promotion = None
         
         self.is_white_turn = not self.is_white_turn
         return self.post_move_evaluation()

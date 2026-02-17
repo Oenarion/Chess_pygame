@@ -68,6 +68,8 @@ class Grid():
     def get_all_pieces(self, color):
         """
         Get all pieces of a certain color.
+        
+        Returns piece and piece_pos
         """
         pieces = []
         for row in range(len(self.grid)):
@@ -167,9 +169,19 @@ class Grid():
             moves = piece.get_legal_moves(pos, self)
             if moves:
                 # append also the piece so we know what to move
-                final_moves.append((piece, moves))
+                final_moves.append((piece, pos, moves))
         
         return final_moves
+    
+    def iter_pseudo_moves(self, color_is_white):
+        pieces = self.get_all_pieces(color_is_white)
+        out = []
+        for piece, pos in pieces:
+            moves = piece.get_pseudo_legal_moves(pos, self)
+            if moves:
+                out.append((piece, tuple(pos), moves))
+        return out
+
         
     def is_empty(self, row, col):
         # empty space
@@ -181,53 +193,98 @@ class Grid():
         # if is_white is not == to current is_white we have an enemy
         return self.grid[row][col].is_white != is_white
     
-    def move_piece(self, piece, from_pos, to_pos):
+    def move_piece(self, piece, from_pos, to_pos, record_undo=False):
+        """
+            Args:
+                - piece (ChessPiece): piece we want to move
+                - from_pos (tuple): starting position
+                - to_pos (tuple): ending position
+                
+            Returns a way to undo the move, checks also special conditions
+            such as castle, en passant and also updates current turn
+            and last time something was eaten.
+        """
         s_row, s_col = from_pos
         e_row, e_col = to_pos
+
         has_eaten = False
+        prev_pawn_promotion = self.pawn_promotion
         self.pawn_promotion = None
-        # get special capture // en passant
+
+        captured = self.grid[e_row][e_col]
+
+        # --- UNDO RECORD ---
+        undo = None
+        if record_undo:
+            undo = {
+                "from": from_pos,
+                "to": to_pos,
+                "piece": piece,
+                "captured": captured,
+                "last_move": self.last_move,
+                "turn": self.turn,
+                "last_eaten": self.last_eaten,
+                "en_passant_target": self.en_passant_target,
+                "pawn_promotion": prev_pawn_promotion,
+                # ripristino flag pezzo
+                "piece_first_move": getattr(piece, "first_move", None),
+                "piece_castle": getattr(piece, "castle", None),
+                # per mosse speciali
+                "en_passant_capture": None,  # (r,c,captured_piece)
+                "castle_rook": None,         # (r_from,c_from,r_to,c_to, rook, rook_castle_prev)
+            }
+
+        # --- EN PASSANT ---
         if isinstance(piece, Pawn):
             if s_col != e_col and self.is_empty(e_row, e_col):
+                # pawn catturato sta su (s_row, e_col)
+                ep_captured = self.grid[s_row][e_col]
+                if record_undo:
+                    undo["en_passant_capture"] = (s_row, e_col, ep_captured)
                 self.grid[s_row][e_col] = 0
                 has_eaten = True
                 self.en_passant_target = ()
 
-        # check castle
+        # --- CASTLE ---
         if isinstance(piece, King) and abs(e_col - s_col) == 2:
-            # short
-            if e_col == 6:
+            if e_col == 6:  # short
                 rook = self.grid[s_row][7]
+                if record_undo:
+                    undo["castle_rook"] = (s_row, 7, s_row, 5, rook, rook.castle)
                 self.grid[s_row][5] = rook
                 self.grid[s_row][7] = 0
                 rook.castle = False
-            # long
-            elif e_col == 2:
+
+            elif e_col == 2:  # long
                 rook = self.grid[s_row][0]
+                if record_undo:
+                    undo["castle_rook"] = (s_row, 0, s_row, 3, rook, rook.castle)
                 self.grid[s_row][3] = rook
                 self.grid[s_row][0] = 0
                 rook.castle = False
 
+        # --- CAPTURE NORMAL ---
         if self.grid[e_row][e_col] != 0:
             has_eaten = True
 
+        # --- MOVE PIECE ---
         self.grid[e_row][e_col] = piece
         self.grid[s_row][s_col] = 0
-        
-        # check for promotion
+
+        # --- PROMOTION CHECK ---
         if isinstance(piece, Pawn):
             piece.first_move = False
             last_rank = 0 if piece.is_white else 7
-            # trigger promotion
             if e_row == last_rank:
                 self.pawn_promotion = (e_row, e_col, piece.is_white)
-            
+
+        # --- UPDATE CASTLING FLAGS ---
         if isinstance(piece, Rook):
             piece.castle = False
-            
         if isinstance(piece, King):
             piece.castle = False
-            
+
+        # --- LAST MOVE ---
         self.last_move = {
             "piece": piece,
             "from": from_pos,
@@ -235,11 +292,47 @@ class Grid():
             "eaten": has_eaten,
             "double_step": isinstance(piece, Pawn) and abs(from_pos[0] - to_pos[0]) == 2
         }
-        
-        # update turn
+
+        # --- TURN ---
         if has_eaten:
             self.last_eaten = self.turn
         self.turn += 1
+
+        return undo
+
+    def undo_move(self, undo):
+        fr, fc = undo["from"]
+        tr, tc = undo["to"]
+        piece = undo["piece"]
+
+        # ripristina pezzi base
+        self.grid[fr][fc] = piece
+        self.grid[tr][tc] = undo["captured"]
+
+        # ripristina en passant capture
+        if undo["en_passant_capture"] is not None:
+            r, c, cap = undo["en_passant_capture"]
+            self.grid[r][c] = cap
+
+        # ripristina castle rook
+        if undo["castle_rook"] is not None:
+            r_from, c_from, r_to, c_to, rook, rook_castle_prev = undo["castle_rook"]
+            self.grid[r_from][c_from] = rook
+            self.grid[r_to][c_to] = 0
+            rook.castle = rook_castle_prev
+
+        # ripristina flag del pezzo mosso
+        if undo["piece_first_move"] is not None:
+            piece.first_move = undo["piece_first_move"]
+        if undo["piece_castle"] is not None:
+            piece.castle = undo["piece_castle"]
+
+        # ripristina stato globale
+        self.last_move = undo["last_move"]
+        self.turn = undo["turn"]
+        self.last_eaten = undo["last_eaten"]
+        self.en_passant_target = undo["en_passant_target"]
+        self.pawn_promotion = undo["pawn_promotion"]
 
     def get_king_square(self, is_white):
         for row in range(8):
@@ -443,6 +536,16 @@ class Grid():
         
         return self.board_signatures[sig]
      
+    def compute_current_score(self, is_white_color):
+        """
+        Computes total score of the player (used for minmax algo)
+        """
+        score = 0
+        pieces = self.get_all_pieces(is_white_color)
+        for piece, _ in pieces:
+            score += piece.value
+            
+        return score
 class SpriteSheet:
     def __init__(self, filename):
         self.sheet = pygame.image.load(filename).convert_alpha()
@@ -499,6 +602,7 @@ class ChessPiece:
 class Pawn(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
         sprite = spritesheet.get_sprite(0+32*is_white, 0, 32, 32, scale)
+        self.value = 10
         # special condition for first move
         self.first_move = True
         # this will be up only for one turn
@@ -538,12 +642,11 @@ class Pawn(ChessPiece):
             moves.append(en_passant)
 
         return moves
-            
-
     
 class Rook(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
         sprite = spritesheet.get_sprite(0+32*is_white, 32, 32, 32, scale)
+        self.value = 50
         self.is_white = is_white
         super().__init__("rook", sprite)
         self.castle = True       
@@ -559,11 +662,11 @@ class Rook(ChessPiece):
         (0, 1)
         ]
         return utils.sliding_moves(self, position, grid, directions)
-        
-    
+                
 class Bishop(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
         sprite = spritesheet.get_sprite(0+32*is_white, 64, 32, 32, scale)
+        self.value = 30
         self.is_white = is_white
         super().__init__("bishop", sprite)
         
@@ -578,10 +681,11 @@ class Bishop(ChessPiece):
         (1, 1)
         ]
         return utils.sliding_moves(self, position, grid, directions)
-    
+
 class Knight(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
         sprite = spritesheet.get_sprite(0+32*is_white, 96, 32, 32, scale)
+        self.value = 30
         self.is_white = is_white
         super().__init__("knight", sprite)
         
@@ -613,6 +717,7 @@ class Knight(ChessPiece):
 class Queen(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
         sprite = spritesheet.get_sprite(0+32*is_white, 128, 32, 32, scale)
+        self.value = 90
         self.is_white = is_white
         super().__init__("queen", sprite)
         
@@ -630,6 +735,7 @@ class Queen(ChessPiece):
 class King(ChessPiece):
     def __init__(self, spritesheet, scale, is_white=True):
         sprite = spritesheet.get_sprite(0+32*is_white, 160, 32, 32, scale)
+        self.value = 900
         self.is_white = is_white
         super().__init__("king", sprite)
         self.castle = True

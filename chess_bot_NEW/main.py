@@ -54,8 +54,7 @@ def main():
     
     black_pieces, white_pieces = create_pieces(PIECE_SPRITESHEET)
 
-    player_color = False 
-    ai_bot = bot.RandomBot()
+    player_color = True 
     
     game_grid = p.Grid(8, 8, TILE_SIZE, BORDER, player_color)
     game_grid.populate_grid(black_pieces, white_pieces)
@@ -63,12 +62,15 @@ def main():
     game_grid.record_position(True)
 
     controller = GameController(game_grid, PIECE_SPRITESHEET, SCALE)   
-
+    ai_bots = [bot.RandomBot(), bot.MiniMaxBot(depth=3, game_controller=controller)]
+    # using minimax for now
+    ai_bot = ai_bots[1]
     grid_colors = [WHITE, GREEN]
     running = True
     game_over = False
     gamestate = GameState.ONGOING
-    
+    # wait one cycle before the bot starts
+    wait_move = True
     while running:
         screen.fill((0, 0, 0))
         promotion_gamestate = False
@@ -103,15 +105,9 @@ def main():
         # BOT TURN
         # check always if it's already game over
         if not game_over and controller.is_white_turn != player_color:
-            if controller.pending_promotion:
-                pr, pc, is_white = controller.pending_promotion
-                # autopromote to queen for now
-                game_grid.promote_pawn((pr, pc), 'Q', is_white, controller.spritesheet, controller.scale)
-                controller.pending_promotion = None
-                controller.is_white_turn = not controller.is_white_turn
-                gamestate = controller.post_move_evaluation()
-            else:
+            if not wait_move:
                 controller.bot_move(ai_bot, controller.is_white_turn)
+            wait_move = not wait_move
 
         if controller.pending_promotion and controller.is_white_turn == player_color:
             in_promotion = controller.pending_promotion

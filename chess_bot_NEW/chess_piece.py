@@ -21,6 +21,7 @@ class Grid():
         self.en_passant_target = None
         # check if pawn is getting promoted
         self.pawn_promotion = None
+        self.anim = None
         
     def get_piece_pos(self, piece):
         for i in range(8):
@@ -65,6 +66,16 @@ class Grid():
             col = 7 - col
         return row, col
         
+    def square_to_pixel(self, row, col):
+        """
+        Board coords -> top-left pixel coords, rispettando flip e border.
+        """
+        r, c = self.board_to_screen(row, col)
+        x = c * self.tile_size
+        y = self.border + r * self.tile_size
+        return x, y
+
+
     def get_all_pieces(self, color):
         """
         Get all pieces of a certain color.
@@ -91,7 +102,20 @@ class Grid():
                     self.tile_size,
                     self.tile_size,
                 )
-                pygame.draw.rect(screen, (210, 20, 20), rect)
+                pygame.draw.rect(screen, (112, 41, 99), rect)
+            if self.last_move:
+                sr, sc = self.last_move["from"]
+                er, ec = self.last_move["to"]
+                sr, sc = self.board_to_screen(sr, sc)
+                er, ec = self.board_to_screen(er, ec)
+                rect = pygame.Rect(sc * self.tile_size,
+                                   self.border + sr * self.tile_size,
+                                   self.tile_size, self.tile_size)
+                pygame.draw.rect(screen, (128, 0, 128), rect)
+                rect = pygame.Rect(ec * self.tile_size,
+                                   self.border + er * self.tile_size,
+                                   self.tile_size, self.tile_size)
+                pygame.draw.rect(screen, (207, 159, 255), rect)
                 
             if legal_moves:
                 self.draw_legal_moves(screen, legal_moves)
@@ -122,13 +146,37 @@ class Grid():
             self.tile_size // 2 - 15)
             
     def draw_pieces(self, screen):
+        anim_piece = None
+        anim_to = None
+
+        if self.anim:
+            anim_piece = self.anim["piece"]
+            anim_to = self.anim["to"]
+
+        # draw all pieces except the animated one at destination square
         for i in range(8):
             for j in range(8):
                 piece = self.grid[i][j]
                 if piece != 0:
+                    if self.anim and piece is anim_piece and (i, j) == anim_to:
+                        continue  # lo disegniamo dopo, in interpolazione
                     r, c = self.board_to_screen(i, j)
                     piece.draw(screen, self.tile_size, self.border, (r, c))
-        
+
+        # draw animated piece on top
+        if self.anim:
+            t = self.anim["t"] / self.anim["duration"]
+            if t < 0: t = 0
+            if t > 1: t = 1
+
+            sx, sy = self.anim["start_px"]
+            ex, ey = self.anim["end_px"]
+
+            x = sx + (ex - sx) * t
+            y = sy + (ey - sy) * t
+
+            screen.blit(self.anim["piece"].sprite, (x, y))
+  
     def generate_promotion_pieces(self, spritesheet, scale):
         promo_sprites = {
             True: {  # white
@@ -182,7 +230,6 @@ class Grid():
                 out.append((piece, tuple(pos), moves))
         return out
 
-        
     def is_empty(self, row, col):
         # empty space
         return self.grid[row][col] == 0
@@ -298,7 +345,29 @@ class Grid():
             self.last_eaten = self.turn
         self.turn += 1
 
+        # --- START ANIMATION (render-only) ---
+        duration = 0.2  # seconds
+        sx, sy = self.square_to_pixel(s_row, s_col)
+        ex, ey = self.square_to_pixel(e_row, e_col)
+
+        self.anim = {
+            "piece": piece,
+            "from": (s_row, s_col),
+            "to": (e_row, e_col),
+            "start_px": (sx, sy),
+            "end_px": (ex, ey),
+            "t": 0.0,
+            "duration": duration,
+        }
+
         return undo
+
+    def update_animation(self, dt):
+        if not self.anim:
+            return
+        self.anim["t"] += dt
+        if self.anim["t"] >= self.anim["duration"]:
+            self.anim = None
 
     def undo_move(self, undo):
         fr, fc = undo["from"]
@@ -546,6 +615,8 @@ class Grid():
             score += piece.value
             
         return score
+
+
 class SpriteSheet:
     def __init__(self, filename):
         self.sheet = pygame.image.load(filename).convert_alpha()

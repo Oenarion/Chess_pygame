@@ -69,9 +69,10 @@ def main():
     running = True
     game_over = False
     gamestate = GameState.ONGOING
-    # wait one cycle before the bot starts
-    wait_move = True
+    clock = pygame.time.Clock()
+    
     while running:
+        dt = clock.tick(60) / 1000
         screen.fill((0, 0, 0))
         promotion_gamestate = False
         for event in pygame.event.get():
@@ -80,6 +81,9 @@ def main():
                 running = False
 
             if event.type == pygame.MOUSEBUTTONUP:
+                # do not check mouse input if animation is running
+                if game_grid.anim is not None:
+                    continue
                 x, y = pygame.mouse.get_pos()
 
                 # check if the piece is in bounds
@@ -105,14 +109,14 @@ def main():
         # BOT TURN
         # check always if it's already game over
         if not game_over and controller.is_white_turn != player_color:
-            if not wait_move:
+            if game_grid.anim is None:
                 controller.bot_move(ai_bot, controller.is_white_turn)
-            wait_move = not wait_move
 
         if controller.pending_promotion and controller.is_white_turn == player_color:
             in_promotion = controller.pending_promotion
         else:
             in_promotion = None
+        game_grid.update_animation(dt)
         game_grid.draw(screen, grid_colors, controller.legal_moves, in_promotion, controller.piece_selected_position)
         controller.draw_promotion_choices(screen)
         

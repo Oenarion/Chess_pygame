@@ -54,7 +54,7 @@ def main():
     
     black_pieces, white_pieces = create_pieces(PIECE_SPRITESHEET)
 
-    player_color = True 
+    player_color = False 
     ai_bot = bot.RandomBot()
     
     game_grid = p.Grid(8, 8, TILE_SIZE, BORDER, player_color)
@@ -86,7 +86,7 @@ def main():
                     col = int(x // TILE_SIZE)
 
                     # player turn
-                    if controller.is_white_turn == player_color:
+                    if not game_over and controller.is_white_turn == player_color:
                         # handles all the moving piece part
                         gamestate = controller.handle_click(row, col) 
                         if gamestate != GameState.ONGOING:
@@ -94,24 +94,24 @@ def main():
                         if gamestate == GameState.PROMOTION:
                             promotion_gamestate = True
                         print(f"PROMOTION GAMESTATE: {promotion_gamestate}")
-                    
-            # BOT TURN
-            # check always if it's already game over
-            if not game_over and controller.is_white_turn != player_color:
-                if controller.pending_promotion:
-                    pr, pc, is_white = controller.pending_promotion
-                    # autopromote to queen for now
-                    game_grid.promote_pawn((pr, pc), 'Q', is_white, controller.spritesheet, controller.scale)
-                    controller.pending_promotion = None
-                    controller.is_white_turn = not controller.is_white_turn
-                    gamestate = controller.post_move_evaluation()
-                else:
-                    controller.bot_move(ai_bot, controller.is_white_turn)
 
         # GAME OVER        
         if gamestate != GameState.ONGOING and gamestate != GameState.PROMOTION:
             game_over = True
             print(f"GAME OVER: {gamestate}")
+            
+        # BOT TURN
+        # check always if it's already game over
+        if not game_over and controller.is_white_turn != player_color:
+            if controller.pending_promotion:
+                pr, pc, is_white = controller.pending_promotion
+                # autopromote to queen for now
+                game_grid.promote_pawn((pr, pc), 'Q', is_white, controller.spritesheet, controller.scale)
+                controller.pending_promotion = None
+                controller.is_white_turn = not controller.is_white_turn
+                gamestate = controller.post_move_evaluation()
+            else:
+                controller.bot_move(ai_bot, controller.is_white_turn)
 
         if controller.pending_promotion and controller.is_white_turn == player_color:
             in_promotion = controller.pending_promotion

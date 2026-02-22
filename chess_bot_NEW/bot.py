@@ -36,7 +36,7 @@ class MiniMaxBot(Bot):
         return (best_piece, move)
         
     def minimax(self, grid, depth, alpha, beta, maximizing_player, maximizing_color):
-        moves = grid.iter_legal_moves(maximizing_color)
+        moves = grid.iter_legal_moves(maximizing_player)
         # reached maximum depth or gameover
         if depth == 0 or not moves:
             return None, self.evaluate(grid, maximizing_color)

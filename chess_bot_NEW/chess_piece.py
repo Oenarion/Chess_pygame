@@ -75,7 +75,6 @@ class Grid():
         y = self.border + r * self.tile_size
         return x, y
 
-
     def get_all_pieces(self, color):
         """
         Get all pieces of a certain color.
@@ -183,13 +182,13 @@ class Grid():
                 "Q": Queen(spritesheet, scale, True),
                 "R": Rook(spritesheet, scale, True),
                 "B": Bishop(spritesheet, scale, True),
-                "K": Knight(spritesheet, scale, True),
+                "N": Knight(spritesheet, scale, True),
             },
             False: { # black
                 "Q": Queen(spritesheet, scale, False),
                 "R": Rook(spritesheet, scale, False),
                 "B": Bishop(spritesheet, scale, False),
-                "K": Knight(spritesheet, scale, False),
+                "N": Knight(spritesheet, scale, False),
             },
         }
         
@@ -257,6 +256,7 @@ class Grid():
         has_eaten = False
         prev_pawn_promotion = self.pawn_promotion
         self.pawn_promotion = None
+        castle = None
 
         captured = self.grid[e_row][e_col]
 
@@ -301,7 +301,8 @@ class Grid():
                 self.grid[s_row][5] = rook
                 self.grid[s_row][7] = 0
                 rook.castle = False
-
+                castle = "short"
+                
             elif e_col == 2:  # long
                 rook = self.grid[s_row][0]
                 if record_undo:
@@ -309,6 +310,7 @@ class Grid():
                 self.grid[s_row][3] = rook
                 self.grid[s_row][0] = 0
                 rook.castle = False
+                castle = "long"
 
         # --- CAPTURE NORMAL ---
         if self.grid[e_row][e_col] != 0:
@@ -337,7 +339,8 @@ class Grid():
             "from": from_pos,
             "to": to_pos,
             "eaten": has_eaten,
-            "double_step": isinstance(piece, Pawn) and abs(from_pos[0] - to_pos[0]) == 2
+            "double_step": isinstance(piece, Pawn) and abs(from_pos[0] - to_pos[0]) == 2,
+            "castle": castle
         }
 
         # --- TURN ---
@@ -375,29 +378,29 @@ class Grid():
         tr, tc = undo["to"]
         piece = undo["piece"]
 
-        # ripristina pezzi base
+        # restore normal pieces
         self.grid[fr][fc] = piece
         self.grid[tr][tc] = undo["captured"]
 
-        # ripristina en passant capture
+        # restore en passant capture
         if undo["en_passant_capture"] is not None:
             r, c, cap = undo["en_passant_capture"]
             self.grid[r][c] = cap
 
-        # ripristina castle rook
+        # restore castle rook
         if undo["castle_rook"] is not None:
             r_from, c_from, r_to, c_to, rook, rook_castle_prev = undo["castle_rook"]
             self.grid[r_from][c_from] = rook
             self.grid[r_to][c_to] = 0
             rook.castle = rook_castle_prev
 
-        # ripristina flag del pezzo mosso
+        # restore flag del pezzo mosso
         if undo["piece_first_move"] is not None:
             piece.first_move = undo["piece_first_move"]
         if undo["piece_castle"] is not None:
             piece.castle = undo["piece_castle"]
 
-        # ripristina stato globale
+        # restore stato globale
         self.last_move = undo["last_move"]
         self.turn = undo["turn"]
         self.last_eaten = undo["last_eaten"]
@@ -617,7 +620,6 @@ class Grid():
             
         return score
 
-
 class SpriteSheet:
     def __init__(self, filename):
         self.sheet = pygame.image.load(filename).convert_alpha()
@@ -759,7 +761,7 @@ class Knight(ChessPiece):
         sprite = spritesheet.get_sprite(0+32*is_white, 96, 32, 32, scale)
         self.value = 30
         self.is_white = is_white
-        super().__init__("knight", sprite)
+        super().__init__("night", sprite)
         
     def get_attack_squares(self, position, grid: Grid):
         return self.get_pseudo_legal_moves(position, grid)

@@ -62,7 +62,9 @@ def main():
     game_grid.record_position(True)
 
     controller = GameController(game_grid, PIECE_SPRITESHEET, SCALE)   
-    ai_bots = [bot.RandomBot(), bot.MiniMaxBot(depth=3, game_controller=controller)]
+    ai_bots = [bot.RandomBot(), 
+               bot.MiniMaxBot(depth=3, game_controller=controller), 
+               bot.TTMiniMaxBot(depth=3, game_controller=controller)]
     # using minimax for now
     ai_bot = ai_bots[1]
     grid_colors = [WHITE, GREEN]

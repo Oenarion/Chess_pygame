@@ -20,19 +20,31 @@ class RandomBot(Bot):
     
     
 class MiniMaxBot(Bot):
-    def __init__(self, depth, game_controller):
+    def __init__(self, depth, game_controller, opening_reader):
         self.depth= depth
         self.game_controller = game_controller
-           
-    def choose_move(self, grid, color_is_white):
-        best_move, _ = self.minimax(grid, depth = self.depth, 
-                                                alpha = -MATE_SCORE, 
-                                                beta = MATE_SCORE, 
-                                                maximizing_player=color_is_white, 
-                                                maximizing_color=color_is_white)
-        if best_move is None:
-            return (None, None)
-        best_piece, _ , move = best_move
+        self.opening_reader = opening_reader
+        self.follow_opening = True
+        self.opening_followed = None
+        
+    def choose_move(self, grid, color_is_white, last_move):
+        if self.follow_opening:
+            # choose the openings
+            if not self.opening_followed:
+                # choose a random opening
+                if color_is_white:
+                    self.opening_followed = self.opening_reader.get_random_opening()
+                    ...
+                
+        else:
+            best_move, _ = self.minimax(grid, depth = self.depth, 
+                                                    alpha = -MATE_SCORE, 
+                                                    beta = MATE_SCORE, 
+                                                    maximizing_player=color_is_white, 
+                                                    maximizing_color=color_is_white)
+            if best_move is None:
+                return (None, None)
+            best_piece, _ , move = best_move
         return (best_piece, move)
         
     def minimax(self, grid, depth, alpha, beta, maximizing_player, maximizing_color):
@@ -262,3 +274,4 @@ class TTMiniMaxBot(Bot):
         else:
             return black_score - white_score
         
+    

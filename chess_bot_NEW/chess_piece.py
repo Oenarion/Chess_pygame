@@ -88,6 +88,19 @@ class Grid():
                     pieces.append((self.grid[row][col], (row, col)))
         
         return pieces
+    
+    def get_same_pieces(self, piece_name, is_white):
+        """
+        Get same piece type, i.e. all black bishops, all white knights etc etc
+        """
+        pieces = []
+        for row in range(len(self.grid)):
+            for col in range(len(self.grid[0])):
+                if self.grid[row][col] != 0 and self.grid[row][col].name == piece_name \
+                and self.grid[row][col].is_white == is_white:
+                    pieces.append((row, col))
+        
+        return pieces
         
     def draw(self, screen, color, legal_moves, in_promotion, selected_square = None):
         self.draw_chessboard(screen, color)

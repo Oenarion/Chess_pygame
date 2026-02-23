@@ -1,8 +1,9 @@
 import pygame
 from gamestate import GameState
-    
+import random
+
 class GameController:
-    def __init__(self, game_grid, spritesheet, scale):
+    def __init__(self, game_grid, spritesheet, scale, txt_file):
         self.game_grid = game_grid
         self.legal_moves = None
         self.spritesheet = spritesheet
@@ -14,6 +15,7 @@ class GameController:
         self._build_promo_cache()
         self.coord_grid = CoordinateGrid()
         self.moves = []
+        self.openingReader = OpeningReader(txt_file)
 
     def handle_click(self, row, col):
         """
@@ -45,6 +47,9 @@ class GameController:
         # moving or not moving the piece
         if self.legal_moves:
             if (b_row, b_col) in self.legal_moves:
+                same_pieces = self.game_grid.get_same_pieces(self.piece_selected.name, self.is_white_turn)
+                ambiguity = self.coord_grid.check_ambiguities((b_row, b_col), same_pieces, 
+                                                              self.piece_selected_position, self.game_grid)
                 self.game_grid.move_piece(
                     self.piece_selected,
                     self.piece_selected_position,
@@ -58,7 +63,7 @@ class GameController:
                     return GameState.PROMOTION
                 
                 # REGISTER AND PRINT LAST MOVE
-                self.moves.append(self.coord_grid.register_move(last_move, self.is_white_turn))
+                self.moves.append(self.coord_grid.register_move(last_move, self.is_white_turn, ambiguity))
                 print(self.moves[-1])
                 
                 # change player turn and clear everything
@@ -151,6 +156,9 @@ class GameController:
             return self.post_move_evaluation()
         
         piece_pos = self.game_grid.get_piece_pos(piece)
+        same_pieces = self.game_grid.get_same_pieces(piece.name, self.is_white_turn)
+        ambiguity = self.coord_grid.check_ambiguities(move, same_pieces, 
+                                                              piece_pos, self.game_grid)
         self.game_grid.move_piece(piece, piece_pos, move)
         # add promotion check
         if self.game_grid.pawn_promotion:
@@ -161,7 +169,7 @@ class GameController:
         
         last_move = self.game_grid.last_move
         is_white = self.is_white_turn
-        self.moves.append(self.coord_grid.register_move(last_move, is_white, promotion=promotion, promoted_piece="Q"))
+        self.moves.append(self.coord_grid.register_move(last_move, is_white, ambiguity, promotion=promotion, promoted_piece="Q"))
         print(self.moves[-1])
         
         self.is_white_turn = not self.is_white_turn
@@ -174,7 +182,7 @@ class GameController:
 
     def select_piece(self, row, col):
         self.piece_selected = self.game_grid.grid[row][col]
-        self.piece_selected_position = [row, col]
+        self.piece_selected_position = (row, col)
         self.legal_moves = self.piece_selected.get_legal_moves(
             (row, col), self.game_grid
         )
@@ -258,7 +266,7 @@ class CoordinateGrid:
             
         return final_grid
 
-    def register_move(self, last_move, is_white, promotion=False, promoted_piece = None):
+    def register_move(self, last_move, is_white, ambiguity, promotion=False, promoted_piece = None):
         """
         last_move: piece, from, to, has_eaten
         if not pawn we need to specify the piece move K,Q,R,B,N
@@ -269,6 +277,9 @@ class CoordinateGrid:
         SPECIAL CASES:
         Castles are viewed as O-O (short) or O-O-O (long)
         Promotion are viewed as either finalsquare=piece, or if captured just add what the promotion is.
+        AMBIGUITIES:
+        If two pieces can move to the same square we need to add the starting square
+        i.e. knights on f3/b3 can both go to d2, we write Nfd2 or Nbd2
         """
         piece = last_move["piece"]
         start_r, start_c = last_move["from"]
@@ -295,9 +306,12 @@ class CoordinateGrid:
         if piece.name != "pawn":
             final_str += piece.name[0].upper()
         else:
-            if has_eaten:
+            if has_eaten and not ambiguity:
                 # takes the name of the starting file if we have a capture with a pawn
                 final_str += self.grid[start_r][start_c][0]
+                
+        if ambiguity:
+            final_str += str(self.grid[start_r][start_c])
                 
         if has_eaten:
             final_str += "x"
@@ -310,3 +324,69 @@ class CoordinateGrid:
             final_str += promoted_piece.upper()
         
         return final_str
+    
+    def check_ambiguities(self, to, same_pieces, selected_piece_pos, grid):
+        """
+        Checks if any ambiguity is present
+        """
+        print(same_pieces)
+        for piece_pos in same_pieces:
+            piece = grid.grid[piece_pos[0]][piece_pos[1]]
+            print(piece_pos, selected_piece_pos)
+            if piece_pos != selected_piece_pos:
+                if to in piece.get_legal_moves(piece_pos, grid):
+                    return True
+        return False    
+    
+class OpeningReader():
+    def __init__(self, txt_file):
+        self.txt_file = txt_file
+        self.move_mapping = {}
+        self.read_file()
+        
+    def read_file(self):
+        # first line is opening
+        # second line are the moves
+        # third line is spacing
+        with open(self.txt_file) as f:
+            lines = f.readlines()
+            while lines:
+                name = lines.pop(0)[:-1]
+                moves = lines.pop(0)[:-1]
+                lines.pop(0) #blank
+                
+                round_moves = moves.split(";")
+                array_moves = []
+                # take the moves
+                for move in round_moves:
+                    array_moves.append(move.split(","))
+                    
+                # save everything in the mapping
+                self.move_mapping[name] = array_moves
+                
+    def get_random_opening(self):
+        random_key = random.choice(list(self.move_mapping.keys()))
+        return self.move_mapping[random_key]
+
+    def get_piece_from_move(self, move):
+        if move == "O-O":
+            return ("king", "short")
+        if move == 'O-O-O':
+            return ("king", "long")
+        
+        if len(move) == 2:
+            return ("pawn", move)
+        
+        mapping = {'K': 'king',
+                       'Q': 'queen',
+                       'B': 'bishop',
+                       'R': 'rook',
+                       'N': 'night'}
+        
+        if len(move) == 3:
+            return (mapping[move[0]], move[1:])
+        
+        if len(move) >= 4:
+            if move[0] not in mapping.keys:
+                return ("pawn", move[2:])
+            return (mapping[move[0]], move[2:])

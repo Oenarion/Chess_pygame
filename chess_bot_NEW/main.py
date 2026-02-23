@@ -1,8 +1,9 @@
 import pygame
-import math
+import os
 import chess_piece as p
 from utils import GameController, GameState
 import bot
+
 
 WHITE=(255,255,255)
 GREEN=(118,150,86)
@@ -11,6 +12,7 @@ HEIGHT = 592
 BORDER = 40
 TILE_SIZE = (HEIGHT - 2 * BORDER) // 8
 SCALE = 2
+CWD = "\\".join(os.path.abspath(__file__).split("\\")[:-1])
 
 def create_pieces(spritesheet):            
     black_pieces = {}
@@ -60,8 +62,9 @@ def main():
     game_grid.populate_grid(black_pieces, white_pieces)
     # records the first position of the board
     game_grid.record_position(True)
-
-    controller = GameController(game_grid, PIECE_SPRITESHEET, SCALE)   
+    
+    openings_file = CWD+"\\openings.txt"
+    controller = GameController(game_grid, PIECE_SPRITESHEET, SCALE, openings_file)   
     ai_bots = [bot.RandomBot(), 
                bot.MiniMaxBot(depth=3, game_controller=controller), 
                bot.TTMiniMaxBot(depth=3, game_controller=controller)]

@@ -1,7 +1,7 @@
 import pygame
 import os
 import chess_piece as p
-from utils import GameController, GameState
+from utils import GameController, GameState, OpeningReader
 import bot
 
 
@@ -64,9 +64,11 @@ def main():
     game_grid.record_position(True)
     
     openings_file = CWD+"\\openings.txt"
-    controller = GameController(game_grid, PIECE_SPRITESHEET, SCALE, openings_file)   
+    opening_reader = OpeningReader(openings_file)
+    
+    controller = GameController(game_grid, PIECE_SPRITESHEET, SCALE, opening_reader)   
     ai_bots = [bot.RandomBot(), 
-               bot.MiniMaxBot(depth=3, game_controller=controller), 
+               bot.MiniMaxBot(depth=3, game_controller=controller, opening_reader=opening_reader), 
                bot.TTMiniMaxBot(depth=3, game_controller=controller)]
     # using minimax for now
     ai_bot = ai_bots[1]

@@ -27,15 +27,54 @@ class MiniMaxBot(Bot):
         self.follow_opening = True
         self.opening_followed = None
         
-    def choose_move(self, grid, color_is_white, last_move):
+    def get_opening_move(self, grid, index, turn):
+        """
+        Get a possible opening to follow and a consequentially a move to do as the bot.
+        """
+        self.opening_followed = self.opening_reader.get_random_opening()
+        # get white move
+        print(f"OPENING CHOSEN: {self.opening_followed}")
+        fullmove = self.opening_followed[turn][index]
+        start_pos, end_pos = self.opening_reader.get_start_end_from_move(fullmove)
+        s_row, s_col = self.game_controller.coord_grid.get_cell_from_square_name(start_pos, grid)
+        e_row, e_col = self.game_controller.coord_grid.get_cell_from_square_name(end_pos, grid)
+        piece = grid.grid[s_row][s_col]
+        move = (e_row, e_col)
+        return (piece, move)
+    
+    def check_opening(self, turn, color_is_white):
+        """
+        Checks if any opening is possible, if not minimax algorithm will start.
+        """
+        last_move = self.game_controller.moves[-1].split(":")[1][1:]
+        possible_openings = self.opening_reader.get_possible_openings(turn, last_move, color_is_white)
+        if not possible_openings:
+            self.follow_opening = None
+            self.opening_followed = None
+            return False
+        return True
+                
+    def choose_move(self, grid, color_is_white):
         if self.follow_opening:
+            curr_turn = grid.turn // 2
+            index = 0 if color_is_white else 1
             # choose the openings
             if not self.opening_followed:
                 # choose a random opening
                 if color_is_white:
-                    self.opening_followed = self.opening_reader.get_random_opening()
-                    ...
-                
+                    return self.get_opening_move(grid, index, curr_turn)
+                else:
+                    print("GOT HERE?")
+                    # if opening is present we proceed with normal opening
+                    if self.check_opening(curr_turn, color_is_white):
+                        return self.get_opening_move(grid, index, curr_turn)
+                    # else we just go back to minimax
+                    return self.choose_move(grid, color_is_white)
+            # next moves
+            else:
+                if self.check_opening(curr_turn, color_is_white):
+                    return self.get_opening_move(grid, index, curr_turn)
+                return self.choose_move(grid, color_is_white)
         else:
             best_move, _ = self.minimax(grid, depth = self.depth, 
                                                     alpha = -MATE_SCORE, 

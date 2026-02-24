@@ -3,7 +3,7 @@ from gamestate import GameState
 import random
 
 class GameController:
-    def __init__(self, game_grid, spritesheet, scale, txt_file):
+    def __init__(self, game_grid, spritesheet, scale, opening_reader):
         self.game_grid = game_grid
         self.legal_moves = None
         self.spritesheet = spritesheet
@@ -15,7 +15,7 @@ class GameController:
         self._build_promo_cache()
         self.coord_grid = CoordinateGrid()
         self.moves = []
-        self.openingReader = OpeningReader(txt_file)
+        self.openingReader = opening_reader
 
     def handle_click(self, row, col):
         """
@@ -265,6 +265,19 @@ class CoordinateGrid:
             final_grid.append(grid[i])
             
         return final_grid
+    
+    def get_cell_from_square_name(self, name, board_grid):
+        """
+        Gets the correct cell for the actual name of the cell.
+        I.e. e4 returns (4,4) if player is white or (3,3) otherwise
+        
+        If no name is found none is returned
+        """
+        for i in range(8):
+            for j in range(8):
+                if self.grid[i][j] == name:
+                    return (i,j)
+        return None
 
     def register_move(self, last_move, is_white, ambiguity, promotion=False, promoted_piece = None):
         """
@@ -343,11 +356,13 @@ class OpeningReader():
         self.txt_file = txt_file
         self.move_mapping = {}
         self.read_file()
+        print(self.move_mapping)
         
     def read_file(self):
         # first line is opening
         # second line are the moves
         # third line is spacing
+        # each move has also the starting square to make things easier for the bot
         with open(self.txt_file) as f:
             lines = f.readlines()
             while lines:
@@ -368,14 +383,14 @@ class OpeningReader():
         random_key = random.choice(list(self.move_mapping.keys()))
         return self.move_mapping[random_key]
 
-    def get_piece_from_move(self, move):
-        if move == "O-O":
-            return ("king", "short")
-        if move == 'O-O-O':
-            return ("king", "long")
-        
-        if len(move) == 2:
-            return ("pawn", move)
+    def get_start_end_from_move(self, move):
+        """
+        Get starting square and end square from fullmove. Castle will be saved in the
+        txt file as a normal move, i.e. not as O-O or O-O-O but rather 
+        """
+        print(f"READING MOVE: {move}")
+        if len(move) == 4:
+            return (move[0:2], move[2:])
         
         mapping = {'K': 'king',
                        'Q': 'queen',
@@ -383,10 +398,47 @@ class OpeningReader():
                        'R': 'rook',
                        'N': 'night'}
         
-        if len(move) == 3:
-            return (mapping[move[0]], move[1:])
+        if len(move) == 5:
+            if move[0] not in mapping.keys():
+                return (move[:2], move[-2:])
+            return (move[1:3], move[3:])
         
-        if len(move) >= 4:
-            if move[0] not in mapping.keys:
-                return ("pawn", move[2:])
-            return (mapping[move[0]], move[2:])
+        if len(move) >= 6:
+            return (move[1:3], move[-2:])
+        
+    def get_possible_openings(self, turn, last_move, is_white):
+        """
+        Get the possible opening continuations.
+        Is white is used to know whether we need to check the first move or the second one.
+        """
+        possible_openings = []
+        print(f"LAST MOVE PLAYED: {last_move}")
+        pieces = ['K', 'Q', 'N', 'R', 'B']
+        piece_str_start = ""
+        for key, val in self.move_mapping.items():
+            # if bot is white it needs to check the last turn move
+            if turn >= len(val):
+                continue
+            
+            if is_white:
+                print(f"current turn: {turn}")
+                print(f"LAST MOVE FOR BLACK: {val[turn-1][1]}")
+                if val[turn-1][1][0] in pieces:
+                    piece_str_start = val[turn-1][1][0]
+                last_opening_move = val[turn-1][1][-2:]
+                final_opening_move = piece_str_start + last_opening_move
+                print(f"EXTRAPOLETAED LAST OPENING MOVE: {last_opening_move}")
+            else:
+                print(f"current turn: {turn}")
+                print(f"LAST MOVE FOR BLACK: {val[turn-1][1]}")
+                if val[turn][0][0] in pieces:
+                    piece_str_start = val[turn][0][0]
+                last_opening_move = val[turn][0][-2:]
+                final_opening_move = piece_str_start + last_opening_move
+                print(f"EXTRAPOLETAED LAST OPENING MOVE: {last_opening_move}")
+                
+            if final_opening_move == last_move:
+                possible_openings.append(self.move_mapping[key])
+                
+        return possible_openings
+                

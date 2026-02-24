@@ -1,9 +1,3 @@
 ITALIAN GAME
-e4,e5;Nf3,Nc6;Bc4,Cf6
-
-SICILIAN DEFENSE 1
-e4,c5;Nf3,d6;d4,cxd4;Nxd4,Nf6
-
-SICILIAN DEFENSE 2
-e4,c5;Nc3,a6;Nf3,Nc6;d3,g6
+e2e4,e7e5;Ng1f3,Nb8c6;Bf1c4,Ng8f6;
 

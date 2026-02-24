@@ -56,7 +56,7 @@ def main():
     
     black_pieces, white_pieces = create_pieces(PIECE_SPRITESHEET)
 
-    player_color = False 
+    player_color = True 
     
     game_grid = p.Grid(8, 8, TILE_SIZE, BORDER, player_color)
     game_grid.populate_grid(black_pieces, white_pieces)

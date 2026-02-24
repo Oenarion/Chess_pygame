@@ -266,7 +266,7 @@ class CoordinateGrid:
             
         return final_grid
     
-    def get_cell_from_square_name(self, name, board_grid):
+    def get_cell_from_square_name(self, name):
         """
         Gets the correct cell for the actual name of the cell.
         I.e. e4 returns (4,4) if player is white or (3,3) otherwise
@@ -426,23 +426,34 @@ class OpeningReader():
                 continue
             
             if is_white:
-                print(f"current turn: {turn}")
-                print(f"LAST MOVE FOR BLACK: {val[turn-1][1]}")
-                if val[turn-1][1][0] in pieces:
-                    piece_str_start = val[turn-1][1][0]
-                last_opening_move = val[turn-1][1][-2:]
-                final_opening_move = piece_str_start + last_opening_move
-                print(f"EXTRAPOLETAED LAST OPENING MOVE: {last_opening_move}")
+                # special case for castle
+                fullmove = val[turn-1][1]
+                if fullmove == 'O-O' or fullmove == 'O-O-O':
+                    final_opening_move = fullmove
+                else:
+                    print(f"current turn: {turn}")
+                    print(f"LAST MOVE FOR BLACK: {val[turn-1][1]}")
+                    if fullmove[0] in pieces:
+                        piece_str_start = fullmove[0]
+                    last_opening_move = fullmove[-2:]
+                    final_opening_move = piece_str_start + last_opening_move
+                    print(f"EXTRAPOLETAED LAST OPENING MOVE: {final_opening_move}")
             else:
-                print(f"current turn: {turn}")
-                print(f"LAST MOVE FOR WHITE: {val[turn][0]}")
-                if val[turn][0][0] in pieces:
-                    piece_str_start = val[turn][0][0]
-                last_opening_move = val[turn][0][-2:]
-                final_opening_move = piece_str_start + last_opening_move
-                print(f"EXTRAPOLETAED LAST OPENING MOVE: {last_opening_move}")
+                fullmove = val[turn][0]
+                if fullmove == 'O-O' or fullmove == 'O-O-O':
+                    final_opening_move = fullmove
+                else:
+                    print(f"current turn: {turn}")
+                    print(f"LAST MOVE FOR WHITE: {val[turn][0]}")
+                    if fullmove[0] in pieces:
+                        piece_str_start = fullmove[0]
+                    last_opening_move = fullmove[-2:]
+                    final_opening_move = piece_str_start + last_opening_move
+                    print(f"EXTRAPOLETAED LAST OPENING MOVE: {final_opening_move}")
                 
             if final_opening_move == last_move:
+                print(f"got here, move is: {final_opening_move}")
+                print(f"Key is: {key}")
                 possible_openings.append(self.move_mapping[key])
                 
         return possible_openings

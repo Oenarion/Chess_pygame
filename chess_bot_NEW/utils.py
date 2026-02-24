@@ -383,12 +383,17 @@ class OpeningReader():
         random_key = random.choice(list(self.move_mapping.keys()))
         return self.move_mapping[random_key]
 
-    def get_start_end_from_move(self, move):
+    def get_start_end_from_move(self, move, color_is_white):
         """
         Get starting square and end square from fullmove. Castle will be saved in the
         txt file as a normal move, i.e. not as O-O or O-O-O but rather 
         """
         print(f"READING MOVE: {move}")
+        if move == "O-O":
+            return ("e1", "g1") if color_is_white else ("e8", "g8")
+        if move == "O-O-O":
+            return ("e1", "c1") if color_is_white else ("e8", "c8")
+    
         if len(move) == 4:
             return (move[0:2], move[2:])
         
@@ -430,7 +435,7 @@ class OpeningReader():
                 print(f"EXTRAPOLETAED LAST OPENING MOVE: {last_opening_move}")
             else:
                 print(f"current turn: {turn}")
-                print(f"LAST MOVE FOR BLACK: {val[turn-1][1]}")
+                print(f"LAST MOVE FOR WHITE: {val[turn][0]}")
                 if val[turn][0][0] in pieces:
                     piece_str_start = val[turn][0][0]
                 last_opening_move = val[turn][0][-2:]

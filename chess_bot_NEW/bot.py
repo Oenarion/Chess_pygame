@@ -27,7 +27,7 @@ class MiniMaxBot(Bot):
         self.follow_opening = True
         self.opening_followed = None
         
-    def get_opening_move(self, grid, index, turn):
+    def get_opening_move(self, grid, index, turn, color_is_white):
         """
         Get a possible opening to follow and a consequentially a move to do as the bot.
         """
@@ -35,7 +35,7 @@ class MiniMaxBot(Bot):
         # get white move
         print(f"OPENING CHOSEN: {self.opening_followed}")
         fullmove = self.opening_followed[turn][index]
-        start_pos, end_pos = self.opening_reader.get_start_end_from_move(fullmove)
+        start_pos, end_pos = self.opening_reader.get_start_end_from_move(fullmove, color_is_white)
         s_row, s_col = self.game_controller.coord_grid.get_cell_from_square_name(start_pos, grid)
         e_row, e_col = self.game_controller.coord_grid.get_cell_from_square_name(end_pos, grid)
         piece = grid.grid[s_row][s_col]
@@ -62,18 +62,18 @@ class MiniMaxBot(Bot):
             if not self.opening_followed:
                 # choose a random opening
                 if color_is_white:
-                    return self.get_opening_move(grid, index, curr_turn)
+                    return self.get_opening_move(grid, index, curr_turn, color_is_white)
                 else:
                     print("GOT HERE?")
                     # if opening is present we proceed with normal opening
                     if self.check_opening(curr_turn, color_is_white):
-                        return self.get_opening_move(grid, index, curr_turn)
+                        return self.get_opening_move(grid, index, curr_turn, color_is_white)
                     # else we just go back to minimax
                     return self.choose_move(grid, color_is_white)
             # next moves
             else:
                 if self.check_opening(curr_turn, color_is_white):
-                    return self.get_opening_move(grid, index, curr_turn)
+                    return self.get_opening_move(grid, index, curr_turn, color_is_white)
                 return self.choose_move(grid, color_is_white)
         else:
             best_move, _ = self.minimax(grid, depth = self.depth, 

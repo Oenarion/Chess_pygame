@@ -46,8 +46,9 @@ class MiniMaxBot(Bot):
         """
         Checks if any opening is possible, if not minimax algorithm will start.
         """
-        last_move = self.game_controller.moves[-1].split(":")[1][1:]
-        possible_openings = self.opening_reader.get_possible_openings(turn, last_move, color_is_white)
+        # full history of half-moves played so far (prefixes stripped)
+        played_moves = [m.split(":")[1][1:] for m in self.game_controller.moves]
+        possible_openings = self.opening_reader.get_possible_openings(played_moves)
         print(f"POSSIBLE OPENINGS: {possible_openings}")
         if not possible_openings:
             self.follow_opening = None
@@ -69,7 +70,7 @@ class MiniMaxBot(Bot):
                     print("GOT HERE?")
                     # if opening is present we proceed with normal opening
                     possible_openings = self.check_opening(curr_turn, color_is_white)
-                    if self.check_opening(curr_turn, color_is_white):
+                    if possible_openings:
                         opening = random.choice(possible_openings)
                         return self.get_opening_move(grid, index, curr_turn, color_is_white, opening)
                     # else we just go back to minimax

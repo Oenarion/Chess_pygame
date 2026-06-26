@@ -411,50 +411,83 @@ class OpeningReader():
         if len(move) >= 6:
             return (move[1:3], move[-2:])
         
-    def get_possible_openings(self, turn, last_move, is_white):
+    def played_move_candidates(self, fullmove):
         """
-        Get the possible opening continuations.
-        Is white is used to know whether we need to check the first move or the second one.
+        Convert a full-coordinate opening move (e.g. 'e2e4', 'Ng1f3', 'c5d4',
+        'O-O') into the set of notations that register_move could output for the
+        same move. This way captures (the 'x') and disambiguation prefixes still
+        match even though the opening file only stores plain coordinates.
         """
+        pieces = ('K', 'Q', 'N', 'R', 'B')
+
+        if fullmove in ('O-O', 'O-O-O'):
+            return {fullmove}
+
+        # split into piece letter (if any), start square and end square
+        if fullmove[0] in pieces:
+            piece = fullmove[0]
+            start = fullmove[1:3]
+            end = fullmove[3:5]
+        else:
+            piece = ""
+            start = fullmove[0:2]
+            end = fullmove[2:4]
+
+        start_file, start_rank = start[0], start[1]
+
+        # pawn move: it is a capture iff the file changes (a pawn only leaves
+        # its file to capture), so we can build the exact notation and avoid
+        # false positives (e.g. a quiet 'd5' matching a capture line).
+        if piece == "":
+            if start_file == end[0]:
+                return {end}                     # quiet push, e.g. 'e4'
+            return {start_file + "x" + end}      # capture, e.g. 'exd5'
+
+        # piece move: we cannot know capture/ambiguity without the board, so we
+        # emit every form register_move might produce (quiet/capture, with the
+        # different disambiguation prefixes it uses).
+        candidates = set()
+        for disambig in ("", start_file, start_rank, start):
+            candidates.add(piece + disambig + end)
+            candidates.add(piece + disambig + "x" + end)
+        return candidates
+
+    def flatten_opening(self, val):
+        """
+        Turn an opening stored as rounds [[white, black], ...] into a flat list
+        of half-moves [white, black, white, black, ...], ignoring any empty slot.
+        """
+        flat = []
+        for round_moves in val:
+            for half_move in round_moves:
+                if half_move:
+                    flat.append(half_move)
+        return flat
+
+    def get_possible_openings(self, played_moves):
+        """
+        Return the openings still consistent with the whole game so far.
+
+        played_moves is the full list of half-moves already played, in order and
+        in register_move notation (prefixes stripped), e.g. ['e4', 'e5', 'Nf3'].
+        An opening is a candidate only if every played half-move matches the
+        opening's half-move at the same ply (a real prefix match, not just the
+        last move) AND the opening still has at least one more move for the bot
+        to play next.
+        """
+        played_len = len(played_moves)
         possible_openings = []
-        print(f"LAST MOVE PLAYED: {last_move}")
-        pieces = ['K', 'Q', 'N', 'R', 'B']
-        piece_str_start = ""
+        print(f"PLAYED MOVES: {played_moves}")
         for key, val in self.move_mapping.items():
-            # if bot is white it needs to check the last turn move
-            if turn >= len(val):
+            flat = self.flatten_opening(val)
+            # the opening must be able to provide the bot's next move
+            if len(flat) <= played_len:
                 continue
-            
-            if is_white:
-                # special case for castle
-                fullmove = val[turn-1][1]
-                if fullmove == 'O-O' or fullmove == 'O-O-O':
-                    final_opening_move = fullmove
-                else:
-                    print(f"current turn: {turn}")
-                    print(f"LAST MOVE FOR BLACK: {val[turn-1][1]}")
-                    if fullmove[0] in pieces:
-                        piece_str_start = fullmove[0]
-                    last_opening_move = fullmove[-2:]
-                    final_opening_move = piece_str_start + last_opening_move
-                    print(f"EXTRAPOLETAED LAST OPENING MOVE: {final_opening_move}")
-            else:
-                fullmove = val[turn][0]
-                if fullmove == 'O-O' or fullmove == 'O-O-O':
-                    final_opening_move = fullmove
-                else:
-                    print(f"current turn: {turn}")
-                    print(f"LAST MOVE FOR WHITE: {val[turn][0]}")
-                    if fullmove[0] in pieces:
-                        piece_str_start = fullmove[0]
-                    last_opening_move = fullmove[-2:]
-                    final_opening_move = piece_str_start + last_opening_move
-                    print(f"EXTRAPOLETAED LAST OPENING MOVE: {final_opening_move}")
-                
-            if final_opening_move == last_move:
-                print(f"got here, move is: {final_opening_move}")
-                print(f"Key is: {key}")
-                possible_openings.append(self.move_mapping[key])
-                
+            # every move played so far must match this opening's prefix
+            if all(played_moves[i] in self.played_move_candidates(flat[i])
+                   for i in range(played_len)):
+                print(f"opening still matches -> {key}")
+                possible_openings.append(val)
+
         return possible_openings
                 
